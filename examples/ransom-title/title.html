@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ransom title</title>
+<link rel="stylesheet" href="../../packs/zine/zine.css">
+<style>
+  #page { height: 760px; }
+  .sheet { position: absolute; left: 56px; top: 56px; width: 1488px; height: 648px; background-color: #fff; }
+  .caption { position: absolute; left: 250px; top: 205px; font-size: 44px; line-height: 1; -webkit-text-stroke: 1px #000; transform: rotate(0.8deg); }
+</style>
+</head>
+<body>
+<div id="page">
+  <div class="base-layer">
+    <div class="sheet" id="sheet"></div>
+    <div class="track" id="track" data-box="header">TRACK 03 - Scissors</div>
+    <div class="caption">Cut it, tape it, copy it.</div>
+  </div>
+
+  <div class="title-layer" id="title"></div>
+</div>
+<script src="../../packs/zine/parts.js"></script>
+<script>
+  zine.ready(['Anton', 'Archivo Black', 'Alfa Slab One', 'Rubik Mono One', 'Special Elite'], () => {
+    zine.burn(document.getElementById('sheet'), { seed: 77, depth: 120, singe: 50, reach: 80 });
+    zine.track(document.getElementById('track'), { seed: 9 });
+
+    // Cut-out letters on one baseline. Each letter gets a font, a paper tone, a turn and a nudge from its own random stream.
+    // Every tile has an inverted twin, so the letters can flip in the animation.
+    const letters = zine.ransomLetters('Paste up', { seed: 4 });
+    zine.ransom(document.getElementById('title'), { letters, baseline: 560, left: 190, fit: 1220, seed: 4 });
+  });
+</script>
+</body>
+</html>
