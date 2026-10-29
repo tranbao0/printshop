@@ -29,6 +29,10 @@
       "types": "./types/packs/collage/index.d.ts",
       "default": "./packs/collage/index.js"
     },
+    "./packs/*.js": {
+      "types": "./types/packs/*.d.ts",
+      "default": "./packs/*.js"
+    },
     "./packs/*": "./packs/*"
   },
   "files": [

@@ -10,8 +10,8 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const run = promisify(execFile);
 
-/** The folders of types/ that tsc writes. Anything else in types/ (the README) is written by hand. */
-const GENERATED = ['src', 'packs', 'examples'];
+/** The file of types/ that is written by hand. Everything else in types/ is written by tsc. */
+const HAND_WRITTEN = 'README.md';
 
 /**
  * Lists the files of a folder, with paths relative to it.
@@ -31,6 +31,15 @@ async function listFiles(folder, sub = '') {
 }
 
 /**
+ * Compares two texts and ignores the difference between CRLF and LF line endings.
+ * @param {string} a
+ * @param {string} b
+ */
+function sameText(a, b) {
+  return a.replaceAll('\r\n', '\n') === b.replaceAll('\r\n', '\n');
+}
+
+/**
  * Writes the declaration files into `outDir`.
  * @param {string} outDir
  */
@@ -41,7 +50,9 @@ async function generate(outDir) {
 
 const check = process.argv.includes('--check');
 if (!check) {
-  for (const sub of GENERATED) await rm(path.join(root, 'types', sub), { recursive: true, force: true });
+  for (const entry of await readdir(path.join(root, 'types')).catch(() => [])) {
+    if (entry !== HAND_WRITTEN) await rm(path.join(root, 'types', entry), { recursive: true, force: true });
+  }
   await generate(path.join(root, 'types'));
 } else {
   const temp = await mkdtemp(path.join(os.tmpdir(), 'printshop-types-'));
@@ -49,12 +60,12 @@ if (!check) {
     await generate(temp);
     /** @type {string[]} */
     const problems = [];
-    const fresh = (await listFiles(temp)).filter((f) => GENERATED.includes(f.split(path.sep)[0]));
-    const kept = (await listFiles(path.join(root, 'types'))).filter((f) => GENERATED.includes(f.split(path.sep)[0]));
+    const fresh = (await listFiles(temp)).filter((f) => f !== HAND_WRITTEN);
+    const kept = (await listFiles(path.join(root, 'types'))).filter((f) => f !== HAND_WRITTEN);
     for (const f of kept) if (!fresh.includes(f)) problems.push(`types/${f} is not made any more`);
     for (const f of fresh) {
       if (!kept.includes(f)) problems.push(`types/${f} is missing`);
-      else if (!(await readFile(path.join(temp, f))).equals(await readFile(path.join(root, 'types', f)))) problems.push(`types/${f} is out of date`);
+      else if (!sameText(await readFile(path.join(temp, f), 'utf8'), await readFile(path.join(root, 'types', f), 'utf8'))) problems.push(`types/${f} is out of date`);
     }
     if (problems.length > 0) {
       console.error(`${problems.join('\n')}\nRun "npm run types" and commit the result.`);
