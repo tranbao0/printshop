@@ -130,12 +130,10 @@ The checks catch the faults that the eye misses in a quick look:
 - Two papers print alike where they touch.
 - An animated SVG holds a script or an external reference.
 
-Then run the tests of the pack.
-They compare every example with its golden image.
-
-```sh
-node --test
-```
+The tests of a pack compare every example with its golden image.
+The tests of the zine and collage packs run in the printshop repository, and not in your project.
+For a pack of your own, run its test with `node --test packs/<name>/pack.test.js`.
+[Adding a style](adding-a-style.md#9-examples-and-golden-images) shows how.
 
 A check is not a replacement for your eyes.
 Look at the image.

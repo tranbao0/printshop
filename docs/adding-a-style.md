@@ -97,6 +97,7 @@ It puts pieces of paper on a stack: sheets, tiles, mats, motifs and tape.
 An example names such a module as its `build`.
 The default export of that module is a function:
 
+<!-- docs-check: illustrative -->
 ```js
 export default async function build(renderer, { seed, filter }) {
   // Render the layout, run the filter, run the checks of the layout.
@@ -125,6 +126,7 @@ That is the simplest one, and it is enough for most styles.
 The look of a pack is an ordered list of filter steps.
 A step is an object with three fields:
 
+<!-- docs-check: illustrative -->
 ```js
 {
   name: 'grain',
@@ -159,17 +161,19 @@ The core has the general steps in `@tranbao0/printshop/core/filters`:
 
 A pack adds the steps that make its look.
 
-- The zine pack runs gray, contrast, zones, bleed, then four steps of its own: `toner` (weak patches and drum streaks), `halftone` (a dot screen), `specks.black`, `specks.white` and `hairs`.
-  Then it runs levels.
+- The zine pack runs gray, contrast, zones, bleed, then four steps of its own: `toner` (weak patches and drum streaks), `halftone` (a dot screen), `specks` (black and white specks) and `hairs`.
+  The step `specks` draws from the streams `specks.black` and `specks.white`.
+  Then the zine pack runs levels.
 - The collage pack runs gray, contrast, bleed, then one step of its own, `screen` (a clustered-dot halftone), and levels.
 - The template runs gray, contrast, `grain`, threshold and levels.
 
 ### Try it: add a step
 
 Open `packs/riso-test/filter.js`.
-Add a step before `lookSteps`.
+Add a step after `grainStep`.
 It darkens a few whole rows, like a worn scanner bar:
 
+<!-- docs-check: apply scan-step -->
 ```js
 /** @type {import('@tranbao0/printshop/core/filters').FilterStep<{ seed: number, scan: { density: number, strength: number } }>} */
 export const scanStep = {
@@ -186,6 +190,7 @@ export const scanStep = {
 
 Then put it in the list, after `grainStep` and before the threshold:
 
+<!-- docs-check: apply look-steps -->
 ```js
 export const lookSteps = [
   grayStep,
@@ -198,7 +203,7 @@ export const lookSteps = [
 ```
 
 Build again and look at the image.
-Fine rows of light lines now cut through the light grays.
+Thin rows of black dashes now cut through the light grays.
 
 ```sh
 npx printshop build packs/riso-test/example/page.html --out out/scanlines.png
@@ -253,16 +258,28 @@ It has a `width` in pixels, an optional `seed`, and an optional `filter` object 
 - The collage pack has one preset, `card`, for a width of 800 px.
   It sets the contrast of the filter.
 
-Add a preset to `index.js` of your pack:
+A layout does not scale.
+The width of the preset is the width of the page, so draw the layout for that width.
+The layout of the template is drawn for 800 px.
+A preset with another width needs a layout of its own, drawn for that width.
 
+Add a preset to `index.js` of your pack.
+It uses the same width as the layout, and it changes the seed and the look:
+
+<!-- docs-check: apply presets -->
 ```js
 presets: {
   page: { width: 800, seed: 1, filter: { contrast: lookDefaults.contrast } },
-  card: { width: 400, seed: 2, filter: { contrast: 1.5, scan: { density: 0.2, strength: 0.4 } } },
+  card: { width: 800, seed: 2, filter: { contrast: 1.5, scan: { density: 0.2, strength: 0.4 } } },
 },
 ```
 
-Build with it by name: `npx printshop build packs/riso-test/example/page.html --preset card --out out/card.png`.
+Build with it by name:
+
+```sh
+npx printshop build packs/riso-test/example/page.html --preset card --seed 2 --out out/card.png
+```
+
 Without `--preset`, the build uses the preset of the example, then `page`, then the first preset.
 
 ## 7. Assets and licenses
@@ -289,20 +306,26 @@ cp node_modules/@tranbao0/printshop/packs/zine/fonts/anton/Anton-Regular.ttf nod
 
 List it in `index.js`:
 
+<!-- docs-check: apply assets -->
 ```js
 assets: [
   { name: 'Anton', kind: 'font', file: 'fonts/anton/Anton-Regular.ttf', license: 'OFL-1.1', licenseFile: 'fonts/anton/OFL.txt' },
 ],
 ```
 
-Load it in `example/page.html`, and use it:
+Load it in `example/page.html`.
+Add these rules at the end of the `style` element:
 
+<!-- docs-check: apply font-css -->
+```css
+@font-face { font-family: "Anton"; src: url("../fonts/anton/Anton-Regular.ttf"); }
+.label { left: 480px; top: 80px; font: 64px "Anton", sans-serif; }
+```
+
+Then add the label at the end of the element `#page`:
+
+<!-- docs-check: apply font-div -->
 ```html
-<style>
-  @font-face { font-family: "Anton"; src: url("../fonts/anton/Anton-Regular.ttf"); }
-  .label { left: 480px; top: 80px; font: 64px "Anton", sans-serif; }
-</style>
-...
 <div class="shape label">NO. 1</div>
 ```
 
@@ -341,10 +364,19 @@ Do the same for your checks.
 A check that never fails tests nothing.
 
 Add a check to your pack.
-It must keep the share of black ink between 3 and 60 percent, so that a page is neither blank nor a black block:
+It must keep the share of black ink between 3 and 60 percent, so that a page is neither blank nor a black block.
+Add the function to `index.js`, above the pack.
+Export it, so that a test can import it:
 
+<!-- docs-check: apply check-ink -->
 ```js
-function checkInk(name, gray) {
+/**
+ * Fails when the share of black pixels is not between 3 and 60 percent.
+ * @param {string} name
+ * @param {Uint8Array} gray The gray values of the image, from 0 to 255.
+ * @returns {import('@tranbao0/printshop/core/checks').CheckResult}
+ */
+export function checkInk(name, gray) {
   let black = 0;
   for (const value of gray) if (value === 0) black++;
   const share = black / gray.length;
@@ -355,11 +387,32 @@ function checkInk(name, gray) {
 
 Call it from `checks` in `index.js`, with the gray values from `decodeGrayPng`:
 
+<!-- docs-check: apply check-call -->
 ```js
 checks: async ({ png }) => {
   const { colours, gray } = await decodeGrayPng(png);
   return [checkSize('png size', png.length, SIZE_BUDGET), checkColourCount('png colours', colours, 2), checkInk('png ink', gray)];
 },
+```
+
+Now test the check with inputs that must fail.
+Make the file `packs/riso-test/ink.test.js`:
+
+<!-- docs-check: apply check-ink-test -->
+```js
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { checkInk } from './index.js';
+
+test('checkInk fails on a blank page and on a black block, and passes on a normal share', () => {
+  assert.equal(checkInk('ink', new Uint8Array(100).fill(255)).ok, false);
+  assert.equal(checkInk('ink', new Uint8Array(100)).ok, false);
+  assert.equal(checkInk('ink', Uint8Array.from({ length: 100 }, (_, i) => (i < 20 ? 0 : 255))).ok, true);
+});
+```
+
+```sh
+node --test packs/riso-test/ink.test.js
 ```
 
 A build prints the checks that fail, and exits with 1.
@@ -375,6 +428,7 @@ An example is an input that the golden test builds.
 It has a name, an input, a preset, a fixed seed and the path of its golden image.
 The paths are relative to the folder of the pack.
 
+<!-- docs-check: illustrative -->
 ```js
 examples: [
   { name: 'page', input: 'example/page.html', preset: 'page', seed: 1, golden: 'example/page.png' },
@@ -399,8 +453,15 @@ Two rules keep golden images honest:
 - Look at the new image before you keep it.
   A golden image that you did not look at proves nothing.
 
-You changed the look in section 4.
-Look at `out/scanlines.png`.
+You changed the picture in sections 4, 7 and 8: the scanlines, the label and the ink check.
+Build the page again, so that you look at the image that the test will keep:
+
+```sh
+npx printshop build packs/riso-test/example/page.html
+```
+
+Look at `out/page.png`.
+It must show the scanlines and the label "NO. 1".
 If it is what you meant, accept it:
 
 ```sh
@@ -412,12 +473,32 @@ The first command writes the new golden images.
 The second command shows that the test passes against them.
 
 To add a second example, such as the `card` preset, make its golden image first.
-Build it to the path of the golden image, before you list the example:
+Build it to the path of the golden image, before you list the example.
+A build of a layout that an example names uses the seed of that example, and not the seed of the preset.
+The `page` example names `example/page.html` and has the seed 1.
+So pass `--seed` with the seed of the new example:
 
-Run `npx printshop build packs/riso-test/example/page.html --preset card --out packs/riso-test/example/card.png`.
+```sh
+npx printshop build packs/riso-test/example/page.html --preset card --seed 2 --out packs/riso-test/example/card.png
+```
 
-Then add the example to `examples` in `index.js`, with `golden: 'example/card.png'`.
-The test of the pack now builds both examples.
+Look at `packs/riso-test/example/card.png`.
+Then list the example in `examples` in `index.js`.
+Its seed must be the seed that you passed to the build:
+
+<!-- docs-check: apply examples -->
+```js
+examples: [
+  { name: 'page', input: 'example/page.html', preset: 'page', seed: 1, golden: 'example/page.png' },
+  { name: 'card', input: 'example/page.html', preset: 'card', seed: 2, golden: 'example/card.png' },
+],
+```
+
+The test of the pack now builds both examples:
+
+```sh
+node --test packs/riso-test/pack.test.js
+```
 
 ## 10. Check that you are done
 
@@ -426,7 +507,7 @@ The test of the pack now builds both examples.
 3. Every random draw comes from a named stream, and none from `Math.random`.
 4. Every font and texture is listed in `assets`, with its license file next to it.
 5. Each check of yours has a test that makes it fail.
-6. Your project passes its own type check and tests.
+6. Your project passes its own tests.
    The pack imports the core as `@tranbao0/printshop/core/...`, so the project needs the package as a dependency.
 
 When these hold, review the change as [the process](process.md#5-review) says.

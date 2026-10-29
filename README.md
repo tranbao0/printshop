@@ -36,6 +36,10 @@ The lockfile then records the exact commit.
 <!-- docs-check: network -->
 ```sh
 npm install github:tranbao0/printshop#v1.0.0 --ignore-scripts
+```
+
+<!-- docs-check: skip CI runs this command, and it needs root rights -->
+```sh
 npx playwright install --with-deps --only-shell chromium
 ```
 
@@ -215,6 +219,7 @@ The type is `StylePack` in `src/core/types.js`.
 
 Clone the repository, then install the packages and the browser, and run the checks.
 
+<!-- docs-check: skip CI runs these commands, and the last one runs the docs check itself -->
 ```sh
 npm ci --ignore-scripts
 npx playwright install --with-deps --only-shell chromium
@@ -223,9 +228,16 @@ node --test
 ```
 
 The tests include golden image tests for each pack, and a docs check.
-The docs check runs every `printshop` and `npx printshop` command in a code block of this file and of `docs/` in a temporary project.
+The docs check runs every command in a `sh` block of this file and of `docs/`, in a temporary project that has the package in `node_modules`.
+It also applies the code snippets of `docs/adding-a-style.md` to the pack that `printshop new-style` makes, so the guide is followed from the first step to the last test.
 A block can carry a marker on the line before it.
-`<!-- docs-check: ffmpeg -->` runs the block only when `ffmpeg` is there, and `<!-- docs-check: network -->` runs it only when `DOCS_CHECK_NETWORK=1`.
+`<!-- docs-check: ffmpeg -->` runs the block only when `ffmpeg` is there.
+`<!-- docs-check: network -->` runs the block only when `DOCS_CHECK_NETWORK=1`, in an empty folder.
+The install command in [Install](#install) has this marker.
+It installs the tag `v1.0.0`, so it can pass only after that tag exists.
+`<!-- docs-check: skip REASON -->` does not run the block.
+Two blocks have it: the `playwright` command in [Install](#install) needs root rights, and the commands in this section run the whole test suite.
+CI runs the commands of both blocks, and the docs check tests that `ci.yml` has a step for each of them.
 The frame sheet test and the docs check need `ffmpeg`, and CI installs it.
 
 A golden image changes only when you run the test of its pack with `UPDATE_GOLDENS=1`.
