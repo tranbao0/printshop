@@ -11,9 +11,11 @@ import { noiseField } from '../../src/core/noise.js';
 import { decodeGrayPng } from '../../src/core/encode.js';
 import zine, {
   budgets,
+  buildExample,
   buildPage,
   buildRansomTitle,
   checkAnimatedSvg,
+  findSvgProblems,
   assertHopsClearOf,
   fitHop,
   ransomCss,
@@ -22,6 +24,7 @@ import zine, {
 } from '../../packs/zine/index.js';
 import { exampleSeeds } from '../../packs/zine/examples.js';
 import { ransomMotion } from '../../examples/ransom-title/motion.js';
+import { titleOptions as exampleTitleOptions } from '../../examples/ransom-title/options.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const packDir = path.join(root, 'packs/zine');
@@ -36,9 +39,10 @@ after(async () => {
   await renderer.close();
 });
 
-// Golden images. A fresh render is compared with the stored one, and a small share of pixels may differ,
-// because anti-aliased text edges can land on the other side of the halftone threshold on another machine.
-const MAX_DIFFERING_SHARE = 0.003;
+// Golden images. A fresh render is compared with the stored one, pixel for pixel: the fonts are in the pack,
+// the browser is pinned, and the seeds are fixed, so a build gives the same image on every run.
+// A small share of changed pixels could hide a lost speck, a lost hair or a moved part.
+const MAX_DIFFERING_SHARE = 0;
 
 /**
  * @param {Buffer} actual
@@ -57,11 +61,20 @@ async function assertSameImage(actual, golden, name) {
 
 const examplePage = path.join(root, 'examples/zine-page/page.html');
 const exampleTitle = path.join(root, 'examples/ransom-title/title.html');
-/** @type {ReturnType<typeof buildRansomTitle> | undefined} */
+const exampleEntry = (/** @type {string} */ name) => {
+  const entry = zine.examples.find((e) => e.name === name);
+  assert.ok(entry, `${name} is not in zine.examples`);
+  return entry;
+};
+/** @type {ReturnType<typeof buildExample> | undefined} */
 let titleBuild;
-/** The example title, built once for the tests that need it. */
-const exampleTitleBuild = () => (titleBuild ??= buildRansomTitle(renderer, exampleTitle, titleOptions));
-const titleOptions = { seed: exampleSeeds.ransomTitle, label: 'Paste up, a title cut from magazine letters on a burnt photocopied sheet', motion: ransomMotion, avoid: ['header'] };
+/** The example title, built once from its entry in `zine.examples` for the tests that need it. */
+const exampleTitleBuild = async () => {
+  const built = await (titleBuild ??= buildExample(renderer, exampleEntry('ransom-title')));
+  assert.ok(built.svg && built.letters);
+  return { ...built, svg: built.svg, letters: built.letters };
+};
+const titleOptions = { seed: exampleSeeds.ransomTitle, ...exampleTitleOptions };
 
 // The pack contract and its assets.
 
@@ -102,12 +115,57 @@ test('zine.css loads every font of the pack', async () => {
 
 // The example outputs against their goldens.
 
-test('the example zine page renders and equals its golden', async () => {
-  const { png, width, checks } = await buildPage(renderer, examplePage, { seed: exampleSeeds.zinePage });
-  assert.equal(width, 1600);
-  assert.ok(checks.every((c) => c.ok));
-  await assertSameImage(png, await readFile(path.join(root, 'examples/zine-page/page.png')), 'zine-page');
-  assert.ok((await zine.checks({ png, width, height: 1000 })).every((c) => c.ok));
+test('every example of the pack builds from its entry and equals its golden', async () => {
+  for (const example of zine.examples) {
+    const { png, width, height, checks } = await buildExample(renderer, example);
+    assert.equal(width, zine.presets[example.preset].width, `${example.name}: the width follows the preset`);
+    assert.ok(checks.every((c) => c.ok));
+    await assertSameImage(png, await readFile(path.resolve(packDir, example.golden)), example.name);
+    assert.ok((await zine.checks({ png, width, height })).every((c) => c.ok), `${example.name}: the checks of the pack`);
+  }
+});
+
+test('an example of a kind that the pack does not build is an error', async () => {
+  await assert.rejects(buildExample(renderer, { ...exampleEntry('zine-page'), kind: 'riso' }), /no build for the kind "riso"/);
+  await assert.rejects(buildExample(renderer, { ...exampleEntry('zine-page'), preset: 'card' }), /unknown preset "card"/);
+});
+
+test('the layouts fit every preset width: nothing of an example lies outside the page', async () => {
+  const browser = await chromium.launch();
+  try {
+    assert.ok(Object.keys(zine.presets).length > 0);
+    for (const [presetName, preset] of Object.entries(zine.presets)) {
+      for (const example of zine.examples) {
+        const input = pathToFileURL(path.resolve(packDir, example.input)).href;
+        const page = await browser.newPage({ viewport: { width: preset.width, height: 1000 } });
+        try {
+          await page.goto(`${input}?layer=all`);
+          await page.waitForSelector('body[data-ready]', { state: 'attached' });
+          const widest = await page.evaluate(() => Math.max(...[...document.querySelectorAll('#page *:not(svg *)')].map((el) => el.getBoundingClientRect().right)));
+          assert.ok(widest <= preset.width + 1, `${example.name} at the ${presetName} preset: a part reaches ${Math.round(widest)} px, past the width of ${preset.width} px`);
+          const built = await buildPage(renderer, path.resolve(packDir, example.input), { seed: example.seed, width: preset.width });
+          assert.equal(built.width, preset.width);
+        } finally {
+          await page.close();
+        }
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+});
+
+test('a layout that is wider than the width of a build is found', async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 800, height: 1000 } });
+    await page.goto(pathToFileURL(examplePage).href + '?layer=all');
+    await page.waitForSelector('body[data-ready]', { state: 'attached' });
+    const widest = await page.evaluate(() => Math.max(...[...document.querySelectorAll('#page *:not(svg *)')].map((el) => el.getBoundingClientRect().right)));
+    assert.ok(widest > 800 + 1, 'the page reaches past 800 px, which is why the pack has no 800 px preset');
+  } finally {
+    await browser.close();
+  }
 });
 
 test('the same seed gives the same page twice, and another seed gives another page', async () => {
@@ -144,10 +202,11 @@ function assertSameWithinPx(a, b, tolerance) {
 }
 
 test('the example ransom title renders and equals its golden', async () => {
-  const { svg, still, letters, checks } = await exampleTitleBuild();
+  const { svg, png: still, letters, checks } = await exampleTitleBuild();
   assert.ok(checks.every((c) => c.ok));
   assert.equal(letters.length, 7, 'the title has seven letters, not the six of the profile title');
-  await assertSameImage(still, await readFile(path.join(root, 'examples/ransom-title/title-still.png')), 'ransom-title still');
+  const direct = await buildRansomTitle(renderer, exampleTitle, titleOptions);
+  assert.ok(direct.still.equals(still), 'the entry in zine.examples builds the same title as the call with the same options');
 
   const golden = stripImages(await readFile(path.join(root, 'examples/ransom-title/title.svg'), 'utf8'));
   const fresh = stripImages(svg);
@@ -186,6 +245,16 @@ const badSvgs = [
   ['a style import', problem('<style>@import "https://example.com/a.css";</style>'), /@import/],
   ['a foreignObject', problem('<foreignObject width="4" height="4"/>'), /foreignObject/],
   ['a javascript address', problem('<a href="javascript:alert(1)"><rect width="1" height="1"/></a>'), /javascript:/],
+  ['a script element in a namespace', `<svg xmlns="http://www.w3.org/2000/svg" xmlns:s="http://www.w3.org/2000/svg" width="4" height="4"><s:script>alert(1)</s:script></svg>`, /<script>/],
+  ['a foreignObject in a namespace', problem('<s:foreignObject width="4" height="4"/>'), /foreignObject/],
+  ['an event handler in a namespace', problem('<rect width="4" height="4" s:onload="alert(1)"/>'), /event handler/],
+  ['an external image in a namespace', problem('<image q:href="https://example.com/a.png" width="4" height="4"/>'), /external reference href/],
+  ['an animation that sets an external href', problem('<image width="4" height="4"><set attributeName="href" to="https://example.com/a.png"/></image>'), /animates a reference/],
+  ['an animation of xlink:href over time', problem('<image width="4" height="4"><animate attributeName="xlink:href" values="#a;https://example.com/a.png" dur="1s"/></image>'), /animates a reference/],
+  ['a CSS image-set with an external image', problem('<style>rect { fill: image-set("https://example.com/a.png" 1x); }</style>'), /external reference image-set/],
+  ['a CSS image-set with a single quoted external image', problem(`<style>rect { background: -webkit-image-set('//example.com/a.png' 1x); }</style>`), /external reference image-set/],
+  ['a CSS escape that spells url', problem('<style>rect { fill: u\\72l(https://example.com/p.svg); }</style>'), /CSS escape/],
+  ['a nested SVG as a data URI', problem('<image href="data:image/svg+xml;utf8,%3Csvg/%3E" width="4" height="4"/>'), /external reference href/],
 ];
 
 for (const [name, svg, expected] of badSvgs) {
@@ -196,6 +265,11 @@ for (const [name, svg, expected] of badSvgs) {
     assert.match(failed[0].message, expected);
   });
 }
+
+test('the animated SVG check accepts raster data URIs, in image-set too, and fragments', () => {
+  const svg = problem('<style>rect { background: image-set("data:image/png;base64,AAAA" 1x); }</style>');
+  assert.deepEqual(findSvgProblems(svg), []);
+});
 
 test('the animated SVG check accepts data URIs and fragments', () => {
   const svg = problem('<style>#a { fill: url(#g); }</style><image href="data:image/png;base64,AAAA" width="1" height="1"/><use href="#a"/>');
@@ -216,6 +290,42 @@ test('a build stops when the title is over its size budget', async () => {
 
 test('a page that is over its size budget fails the build', async () => {
   await assert.rejects(buildPage(renderer, examplePage, { seed: 1, maxBytes: 1000 }), /over the 1000 byte limit/);
+});
+
+// The checks of the pack fail on purpose-made bad output.
+
+/**
+ * A PNG of random pixels with the four gray levels of the photocopy.
+ * @param {number} width
+ * @param {number} height
+ */
+async function noisyGrayPng(width, height) {
+  const draw = createStreams(5).stream('test.noise', 0);
+  const raw = Buffer.from(Array.from({ length: width * height }, () => Math.floor(draw() * 4) * 85));
+  return sharp(raw, { raw: { width, height, channels: 1 } }).png({ compressionLevel: 9 }).toBuffer();
+}
+
+test('the checks of the pack fail a PNG with more than four colours', async () => {
+  const draw = createStreams(6).stream('test.colour', 0);
+  const raw = Buffer.from(Array.from({ length: 64 * 64 * 3 }, () => Math.floor(draw() * 256)));
+  const png = await sharp(raw, { raw: { width: 64, height: 64, channels: 3 } }).png().toBuffer();
+  assert.ok(png.length < budgets.card, 'the file is small, so only the colours can fail');
+  const failed = (await zine.checks({ png, width: 1600, height: 64 })).filter((c) => !c.ok);
+  assert.deepEqual(failed.map((c) => c.name), ['zine png colours']);
+  assert.match(failed[0].message, /over the limit of 4/);
+});
+
+test('the checks of the pack choose the size budget from the width', async () => {
+  const png = await noisyGrayPng(1000, 1000);
+  assert.ok(png.length > budgets.card && png.length < budgets.page, `${png.length} bytes must lie between the two budgets`);
+  const narrow = await zine.checks({ png, width: 800, height: 1000 });
+  assert.deepEqual(narrow.filter((c) => !c.ok).map((c) => c.name), ['zine png size']);
+  assert.match(narrow.find((c) => !c.ok)?.message ?? '', new RegExp(`over the ${budgets.card} byte limit`));
+  const wide = await zine.checks({ png, width: 1600, height: 1000 });
+  assert.ok(wide.every((c) => c.ok), JSON.stringify(wide));
+  const huge = await noisyGrayPng(1600, 1000);
+  assert.ok(huge.length > budgets.page, `${huge.length} bytes must be over the page budget`);
+  assert.deepEqual((await zine.checks({ png: huge, width: 1600, height: 1000 })).filter((c) => !c.ok).map((c) => c.name), ['zine png size']);
 });
 
 // The motion is general: it follows from the options and the letters, whatever the title says.
@@ -295,7 +405,7 @@ test('a hopping letter that would reach into a named box is an error', () => {
 // The animated title, played.
 
 test('the animated title plays: bare, the entrance, in place, a flip and a hop, and reduced motion shows the finished title', async () => {
-  const { svg, still, letters } = await exampleTitleBuild();
+  const { svg, png: still, letters } = await exampleTitleBuild();
   const t = ransomTimeline(letters, ransomMotion);
   const { width, height } = await decodeGrayPng(still);
   const half = t.waveStarts[0];
@@ -407,4 +517,18 @@ test('the look of one ransom letter does not change when another letter changes'
   } finally {
     await browser.close();
   }
+});
+
+// The package exports.
+
+test('the package exports resolve the pack folder, its files and the core', async () => {
+  const byFolder = await import('@tranbao0/printshop/packs/zine');
+  const byFile = await import('@tranbao0/printshop/packs/zine/index.js');
+  assert.equal(byFolder.default.name, 'zine');
+  assert.equal(byFolder.zine, byFile.zine);
+  for (const file of ['zine.css', 'parts.js', ...zine.assets.flatMap((a) => [a.file, a.licenseFile])]) {
+    const url = import.meta.resolve(`@tranbao0/printshop/packs/zine/${file}`);
+    assert.ok(await exists(fileURLToPath(url)), `${file} does not resolve to a file`);
+  }
+  assert.ok(import.meta.resolve('@tranbao0/printshop/core/render').endsWith('/src/core/render.js'));
 });

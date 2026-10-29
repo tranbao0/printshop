@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { openRenderer } from '../../src/core/render.js';
 import { buildRansomTitle } from '../../packs/zine/build.js';
 import { exampleSeeds } from '../../packs/zine/examples.js';
-import { ransomMotion } from './motion.js';
+import { titleOptions } from './options.js';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.argv[2] ?? here;
@@ -14,9 +14,7 @@ const renderer = await openRenderer();
 try {
   const { svg, still, checks } = await buildRansomTitle(renderer, path.join(here, 'title.html'), {
     seed: exampleSeeds.ransomTitle,
-    label: 'Paste up, a title cut from magazine letters on a burnt photocopied sheet',
-    motion: ransomMotion,
-    avoid: ['header'],
+    ...titleOptions,
   });
   await writeFile(path.join(out, 'title.svg'), svg);
   await writeFile(path.join(out, 'title-still.png'), still);

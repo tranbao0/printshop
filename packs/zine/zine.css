@@ -7,6 +7,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: #000; }
+/* The layouts of the pack are placed in pixels on a page 1600 px wide, so the page width is fixed here. Build them at 1600 px (the `page` preset). */
 body { width: 1600px; color: #000; font-family: "Special Elite", monospace; font-size: 58px; line-height: 1.2; }
 body.layer-title { background: transparent; }
 html:has(body.layer-title) { background: transparent; }

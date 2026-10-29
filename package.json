@@ -14,7 +14,8 @@
   },
   "exports": {
     "./core/*": "./src/core/*.js",
-    "./packs/*": "./packs/*"
+    "./packs/zine": "./packs/zine/index.js",
+    "./packs/zine/*": "./packs/zine/*"
   },
   "files": [
     "src",

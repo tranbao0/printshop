@@ -32,7 +32,7 @@ It holds the photocopy look (halftone, toner, drum streaks, specks, hairs), the 
 
 | File | What it does |
 | --- | --- |
-| `index.js` | The pack: filter steps, presets, fonts with licenses, checks, examples and size budgets. |
+| `index.js` | The pack: filter steps, presets, fonts with licenses, checks, examples (`buildExample` builds one) and size budgets. The page layouts are drawn for 1600 px, so `page` is the only preset. |
 | `photocopy.js` | The photocopy look, built from the steps of the core. |
 | `zine.css` and `parts.js` | A page loads these. `parts.js` draws torn and cut paper, tape, track labels, worn stamps, burnt sheets and cut-out letter tiles. |
 | `ransom-svg.js` | The animated title: entrance, flips, hops and rests, all driven by options. |

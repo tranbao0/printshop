@@ -3,7 +3,7 @@ import { assertChecks, checkSize } from '../../src/core/checks.js';
 import { compositeGray, cropLayer, encodePalettePng, inkBox } from '../../src/core/encode.js';
 import { renderCopy } from '../../src/core/pipeline.js';
 import { streamState } from '../../src/core/seed.js';
-import { budgets, checkAnimatedSvg } from './checks.js';
+import { budgetFor, checkAnimatedSvg } from './checks.js';
 import { photocopy } from './photocopy.js';
 import { assertHopsClearOf, ransomSvg } from './ransom-svg.js';
 
@@ -30,7 +30,7 @@ import { assertHopsClearOf, ransomSvg } from './ransom-svg.js';
 export async function buildPage(renderer, htmlPath, { seed, width = 1600, filterOptions, maxBytes }) {
   const copy = await renderCopy(renderer, htmlPath, { layer: 'all', transparent: false, seed, width, filter: photocopy, filterOptions });
   const png = await encodePalettePng(copy);
-  const limit = maxBytes ?? (width >= 1600 ? budgets.page : budgets.card);
+  const limit = maxBytes ?? budgetFor(width);
   const checks = [checkSize('page', png.length, limit)];
   return { png, width: copy.width, height: copy.height, checks: assertChecks(checks) };
 }
