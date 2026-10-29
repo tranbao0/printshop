@@ -5,6 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { openRenderer } from '../../src/core/render.js';
+import { updateGoldensRequested } from '../../src/core/golden.js';
 import { decodeGrayPng, encodePalettePng } from '../../src/core/encode.js';
 import { collagePack, buildCollage, checkOutput, SIZE_BUDGET } from '../../packs/collage/index.js';
 import { DARKEST_TILES, exampleScene, HEIGHT, WIDTH } from '../../examples/collage/scene.js';
@@ -96,7 +97,7 @@ test('the example collage builds through the pack contract, passes every collage
   const png = await encodePalettePng(image);
   const outputChecks = await collagePack.checks({ png, width: image.width, height: image.height });
   assert.deepEqual(outputChecks.filter((c) => !c.ok), []);
-  if (process.env.UPDATE_GOLDENS) await writeFile(golden, png);
+  if (updateGoldensRequested()) await writeFile(golden, png);
   const a = await decodeGrayPng(png);
   const b = await decodeGrayPng(await readFile(golden));
   const r = compare(a, b);

@@ -3,8 +3,8 @@
 Turns layouts into print-look images: photocopied zine pages, paper collages, ransom-note titles, and animated SVGs that play inside GitHub.
 
 Status: early.
-This release holds the style-neutral core and the zine pack.
-The other style packs, the command-line tool and the full docs follow.
+This release holds the style-neutral core, the zine pack, the collage pack and the command-line tool.
+The full docs follow.
 
 ## The core
 
@@ -23,6 +23,9 @@ It is plain JavaScript (ES modules) with JSDoc types, checked by `tsc` in strict
 | `svg-anim.js` | Per-piece animated SVG parts: stop-motion keyframes, reduced motion, tiles. |
 | `checks.js` | Output checks: size, dimensions, colour count, coverage, slivers, tonal gap, tone order. |
 | `seed.js` | Seeded random streams. |
+| `golden.js` | Golden image comparison for the tests of a pack. |
+| `pack-runner.js` | Finds packs and builds their examples. |
+| `ref/` | The reference tools: frame sheets, registration of a screenshot, tracing of marks. |
 | `types.js` | The style pack contract. |
 
 ## The zine pack
@@ -50,6 +53,49 @@ node examples/ransom-title/build.js
 The first writes `examples/zine-page/page.png`.
 The second writes `examples/ransom-title/title.svg` and `title-still.png`.
 The stored outputs are the golden images of the tests.
+
+## The command-line tool
+
+The package has one command, `printshop`, in `bin/printshop.js`.
+A project that has the package as a dependency runs it as `npx printshop`.
+In this repository, run `node bin/printshop.js` for `printshop` in the examples below.
+Headless Chromium must be installed (`npx playwright install chromium`).
+
+```sh
+printshop build examples/zine-page/page.html
+printshop build examples/ransom-title/title.html
+printshop build examples/collage/scene.js
+printshop new-style riso-test
+printshop ref frames video.mp4
+printshop ref register screenshot.png image.png --out fit.json
+printshop ref trace screenshot.png --fit fit.json
+```
+
+`printshop build <input>` builds an image from a layout and runs the checks of the pack.
+The input is an HTML file, or the layout of an example that is made in code (a pack example with a `build` entry).
+An HTML page needs an element with the id `page`, and it sets the attribute `data-ready` on the body when it is ready.
+A `.js` file that no pack names as an example is refused, because the build would run its code.
+Add `--module` to build a module of your own whose default export is a build function.
+It writes `out/<name>.png`, or `out/<name>.svg` and `out/<name>-still.png` for an animated title, and exits with 1 if a check fails.
+Run from the root of this repository, the three examples above build the images of the golden tests.
+The command does not write over the golden image of any pack.
+A golden image changes only when a pack test runs with `UPDATE_GOLDENS=1` (or `true`).
+
+`printshop new-style <name>` copies `templates/pack` to `packs/<name>`, with an example layout, a preset, a golden test and a README.
+The new pack builds its example and passes its own test as it is:
+
+```sh
+printshop build packs/riso-test/example/page.html
+node --test packs/riso-test/pack.test.js
+```
+
+`printshop ref` holds the reference tools.
+`frames` makes a sheet of numbered frames from a video.
+`register` finds the scale and the offset that match a screenshot to an image.
+`trace` takes the marks of one colour, such as red lines, out of a registered screenshot and maps them into the coordinates of the image.
+`frames` needs `ffmpeg`, from `PATH` or from the `FFMPEG` environment variable.
+The tool says so, and exits with 1, if there is none.
+Run `printshop <command> --help` for the options.
 
 ## Seeded randomness
 

@@ -5,6 +5,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMainModule } from '../../src/core/main-module.js';
 import { openRenderer } from '../../src/core/render.js';
 import { encodePalettePng } from '../../src/core/encode.js';
 import { assertChecks } from '../../src/core/checks.js';
@@ -31,7 +32,7 @@ export default async function build(renderer, { seed, filter }) {
   return buildExample(renderer, { seed, filter: /** @type {Partial<import('../../packs/collage/filter.js').CollageFilterOptions> | undefined} */ (filter) });
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (isMainModule(import.meta.url)) {
   const out = resolve(process.argv[2] ?? fileURLToPath(new URL('./out/collage.png', import.meta.url)));
   if (out === GOLDEN) throw new Error('refusing to write over the golden image; use UPDATE_GOLDENS=1 node --test test/packs/collage.test.js');
   const renderer = await openRenderer();

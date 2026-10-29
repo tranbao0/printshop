@@ -9,6 +9,9 @@
     "url": "git+https://github.com/tranbao0/printshop.git"
   },
   "type": "module",
+  "bin": {
+    "printshop": "bin/printshop.js"
+  },
   "engines": {
     "node": ">=22.2.0"
   },
@@ -19,8 +22,10 @@
     "./packs/*": "./packs/*"
   },
   "files": [
+    "bin",
     "src",
     "packs",
+    "templates",
     "examples"
   ],
   "scripts": {
