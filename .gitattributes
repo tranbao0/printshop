@@ -1,0 +1,3 @@
+types/** text eol=lf
+types/** linguist-generated=true
+types/README.md -linguist-generated

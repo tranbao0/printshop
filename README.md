@@ -49,9 +49,13 @@ The flag also means that the install does not download a browser, so the second 
 On Linux, `--with-deps` installs the system libraries of Chromium and needs root rights.
 Drop the flag if you have the libraries already.
 
-You need Node.js 22.2.0 or newer.
+You need Node.js 22.11.0 (the first long-term support release of Node 22) or newer.
 The package installs the program `printshop` in `node_modules/.bin`.
 Run it with `npx printshop`.
+
+The package ships type declarations in `types/`, so a project that checks its own code with `strict` and `checkJs` can import the package without errors.
+The declarations use the types of Node.js, so the project needs `@types/node`.
+The declarations are generated from the JSDoc of the source: run `npm run types` after you change a type, and commit the result.
 
 ## Try the examples
 
@@ -224,7 +228,8 @@ Clone the repository, then install the packages and the browser, and run the che
 npm ci --ignore-scripts
 npx playwright install --with-deps --only-shell chromium
 npx tsc -p .
-node --test
+npm run types:check
+node --test --test-timeout=180000
 ```
 
 The tests include golden image tests for each pack, and a docs check.
