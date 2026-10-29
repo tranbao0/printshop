@@ -61,4 +61,13 @@
  * @property {PackExample[]} examples
  */
 
+/**
+ * The optional named export `buildExample` of a pack module. A pack whose examples come in kinds that only the pack knows
+ * (the zine pack builds a still `page` and an animated `ransom-title`) builds the example of such a kind in this function.
+ * `png` is the still image. A function that makes an animated file returns it as `svg`.
+ * A runner uses it for an example without a `build` entry. The runner builds a `page` of a pack without it from the `filters` of the pack.
+ * @typedef {(renderer: import('./render.js').Renderer, example: PackExample) => Promise<{
+ *   png: Buffer, width: number, height: number, checks: CheckResult[], svg?: string }>} PackExampleBuilder
+ */
+
 export {};
