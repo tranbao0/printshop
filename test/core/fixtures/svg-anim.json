@@ -1,0 +1,20 @@
+{
+  "pct": [
+    "0%",
+    "50%",
+    "12.3457%",
+    "100%"
+  ],
+  "sec": [
+    "0s",
+    "0.0833s",
+    "2.5s"
+  ],
+  "pulse": "@keyframes p { 0% { opacity: 1; } 10% { opacity: 0; } 20% { opacity: 1; } 30% { opacity: 0; } 100% { opacity: 0; } }",
+  "pulse2": "@keyframes p { 0% { opacity: 0; } 4% { opacity: 1; } 10% { opacity: 0; } 100% { opacity: 0; } }",
+  "wave": "@keyframes w { 0% { opacity: 0; } 4.1667% { transform: none; } 5.5556% { opacity: 0; } 100% { opacity: 0; } }",
+  "step": 0.08333333333333333,
+  "reduced": "\n  @media (prefers-reduced-motion: reduce) {\n    * { animation: none !important; }\n  }",
+  "tiles": "<g id=\"l0\" class=\"letter\"><g class=\"hop\">\n  <image x=\"10\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n  <image class=\"twin\" x=\"10\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n</g></g>\n<g id=\"l1\" class=\"letter\"><g class=\"hop\">\n  <image x=\"40\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n</g></g>\n<g id=\"l2\" class=\"letter\"><g class=\"hop\">\n  <image x=\"70\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n  <image class=\"twin\" x=\"70\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n</g></g>",
+  "doc": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"50\" viewBox=\"0 0 100 50\" role=\"img\" aria-label=\"a label\">\n<style>#l0 { opacity: 1; }\n</style>\n<rect width=\"100\" height=\"50\" fill=\"#000\"/>\n<image width=\"100\" height=\"50\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n<g id=\"l0\" class=\"letter\"><g class=\"hop\">\n  <image x=\"10\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n  <image class=\"twin\" x=\"10\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n</g></g>\n<g id=\"l1\" class=\"letter\"><g class=\"hop\">\n  <image x=\"40\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n</g></g>\n<g id=\"l2\" class=\"letter\"><g class=\"hop\">\n  <image x=\"70\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n  <image class=\"twin\" x=\"70\" y=\"5\" width=\"20\" height=\"40\" href=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==\"/>\n</g></g>\n</svg>\n"
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@tranbao0/printshop",
+  "version": "0.1.0",
+  "description": "Turns layouts into print-look images: photocopied zine pages, paper collages, ransom-note titles and animated SVGs.",
+  "license": "MIT",
+  "author": "Bao Tran",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tranbao0/printshop.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.2.0"
+  },
+  "exports": {
+    "./core/*": "./src/core/*.js"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "playwright": "1.64.1",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
+}
