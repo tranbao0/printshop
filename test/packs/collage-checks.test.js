@@ -142,6 +142,15 @@ test('hidden pieces: a motif half under tape fails', () => {
   assert.equal(checkShown(scene(280))[0].ok, true);
 });
 
+test('hidden pieces: a motif cut by the page edge fails', () => {
+  const scene = (/** @type {number} */ cy) =>
+    page().motif('moon', { type: 'crescent', cx: 150, cy, r: 40, rot: 0 }, { fill: BLACK, back: { fill: WHITE, w: 100, h: 100 } }).build();
+  const bad = checkShown(scene(285))[0];
+  assert.equal(bad.ok, false);
+  assert.match(bad.message, /moon shows only \d+% of itself \(needs 85%\)/);
+  assert.equal(checkShown(scene(150))[0].ok, true);
+});
+
 // ---------- slivers and the base ----------
 
 test('slivers: a sheet that shows as a 4 px band fails, a 50 px band passes', () => {
@@ -174,14 +183,38 @@ test('base sheet: outside a round window does not count', () => {
 // ---------- coverage (probe render) ----------
 
 test('coverage: magenta left on the page fails, a covered page passes', async () => {
+  // The base sheet stays in the scene. The probe render leaves it out, so the bare patch shows.
   const half = createScene({ width: 300, height: 300, seed: 1 }).base(SLATE).sheet('paper', rect(-20, -20, 200, 340), { fill: WHITE, kinds: 'clean', shadow: false }).build();
-  // The base sheet covers the page in the render, so remove it to leave a bare patch: the probe must show it.
-  half.items = half.items.filter((it) => it.role !== 'base');
   const bad = checkProbe(half, await renderCollage(renderer, half, { probe: true }));
   assert.equal(bad.ok, false);
   assert.match(bad.message, /\d+ pixels have no paper/);
   const good = page().build();
   assert.equal(checkProbe(good, await renderCollage(renderer, good, { probe: true })).ok, true);
+});
+
+test('coverage: a gap of 2 px between two sheets fails the probe, though the base hides it in the normal render', async () => {
+  // Two sheets leave a gap at x 151 to 153. The geometry check samples a 4 px grid and misses it. The base sheet fills it in the normal render.
+  const gap = createScene({ width: 300, height: 300, seed: 1 })
+    .base(SLATE)
+    .sheet('l', rect(-20, -20, 171, 340), { fill: WHITE, kinds: 'clean', shadow: false })
+    .sheet('r', rect(153, -20, 200, 340), { fill: PALE, kinds: 'clean', shadow: false })
+    .build();
+  assert.ok(gap.items.some((it) => it.role === 'base'), 'the base sheet is in the scene');
+  assert.equal(checkBase(gap).ok, true, 'the sampled geometry check misses the gap');
+  const bad = checkProbe(gap, await renderCollage(renderer, gap, { probe: true }));
+  assert.equal(bad.ok, false);
+  assert.match(bad.message, /\d+ pixels have no paper/);
+  // The normal render shows the base sheet in the gap.
+  const normal = await renderCollage(renderer, gap);
+  const at = (/** @type {number} */ x) => Array.from(normal.data.subarray((150 * normal.width + x) * 4, (150 * normal.width + x) * 4 + 3));
+  assert.deepEqual(at(152), [0x85, 0x85, 0x85]);
+  // The same page without the gap passes.
+  const closed = createScene({ width: 300, height: 300, seed: 1 })
+    .base(SLATE)
+    .sheet('l', rect(-20, -20, 175, 340), { fill: WHITE, kinds: 'clean', shadow: false })
+    .sheet('r', rect(153, -20, 200, 340), { fill: PALE, kinds: 'clean', shadow: false })
+    .build();
+  assert.equal(checkProbe(closed, await renderCollage(renderer, closed, { probe: true })).ok, true);
 });
 
 // ---------- shadows (printed paper) ----------

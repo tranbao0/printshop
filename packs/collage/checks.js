@@ -37,7 +37,7 @@ const some = (list, max = 4) => (list.length > max ? `${list.slice(0, max).join(
 
 /**
  * Marks: each mark lies inside the cut edge of its own piece, at least `margin` px from it, and no later piece, shadow or tape covers it.
- * `allow` names the covers that are on purpose: `{ mark: 'mouth', by: 'tongue' }` lets the tile `tongue` lie over the marks of `mouth`.
+ * `allow` names the covers that are on purpose: `{ mark: 'label', by: 'flap' }` lets the tile `flap` lie over the marks of `label`.
  * @param {Built} built
  * @param {{ margin?: number, allow?: { mark: string, by: string }[] }} [options] `margin` default 3.
  * @returns {CheckResult[]}
@@ -109,7 +109,7 @@ export function checkMotifs(built, { fit = 8 } = {}) {
 
 /**
  * Hidden pieces: a tile, holder or motif must show at least `min` of its area (a motif at least `minMotif`).
- * Paper pasted later, the shadows of later pieces, tape and the area outside the round window of the scene count as hiding.
+ * Paper pasted later, the shadows of later pieces, tape, the area outside the page and the area outside the round window of the scene count as hiding.
  * A holder counts the paper under its own motif as shown.
  * @param {Built} built
  * @param {{ min?: number, minMotif?: number, step?: number }} [options] `min` default 0.5, `minMotif` default 0.85, `step` (grid, px) default 3.
@@ -136,7 +136,7 @@ export function checkShown(built, { min = 0.5, minMotif = 0.85, step = 3 } = {})
       for (let x = x0; x <= x1; x += step) {
         if (!outlines.some((o) => inside(o, [x, y]))) continue;
         all++;
-        if (built.inRegion([x, y]) && !built.coveredAbove([x, y], above)) shown++;
+        if (x >= 0 && y >= 0 && x < built.width && y < built.height && built.inRegion([x, y]) && !built.coveredAbove([x, y], above)) shown++;
       }
     }
     const share = all ? shown / all : 0;

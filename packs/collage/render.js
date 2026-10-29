@@ -13,7 +13,7 @@ export const PAGE = fileURLToPath(new URL('./page.html', import.meta.url));
 
 /**
  * Renders the collage as pixels, before the print filter.
- * `paper: true` leaves the marks out, so the paper alone can be measured. `probe: true` puts magenta behind the page, so a pixel that no paper covers shows.
+ * `paper: true` leaves the marks out, so the paper alone can be measured. `probe: true` puts magenta behind the page and leaves the safety base sheet out, so a pixel that only the base covers shows too.
  * @param {Renderer} renderer
  * @param {Built} built
  * @param {{ paper?: boolean, probe?: boolean }} [options]
@@ -22,7 +22,7 @@ export const PAGE = fileURLToPath(new URL('./page.html', import.meta.url));
 export async function renderCollage(renderer, built, { paper = false, probe = false } = {}) {
   const { png } = await renderer.render(PAGE, {
     width: built.width,
-    data: { svg: built.svg({ marks: !paper }), width: built.width, height: built.height, background: probe ? '#ff00ff' : '#ffffff' },
+    data: { svg: built.svg({ marks: !paper, base: !probe }), width: built.width, height: built.height, background: probe ? '#ff00ff' : '#ffffff' },
   });
   const { data, width, height } = await decodeRgba(png);
   if (width !== built.width || height !== built.height) throw new Error(`the page is ${width}x${height}, the collage is ${built.width}x${built.height}`);

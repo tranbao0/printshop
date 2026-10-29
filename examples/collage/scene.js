@@ -53,10 +53,10 @@ export function exampleScene(seed = SEED) {
   scene.motif('sparkle-top', { type: 'sparkle', cx: 130, cy: 44, a: 42, b: 28, rot: 24, w: 0.26 }, { fill: BLACK, back: { fill: WHITE, w: 96, h: 62, rot: 6 } });
   scene.motif('flake-top', { type: 'snowflake', cx: 330, cy: 46, R: 38, rot: 8, kind: 'fir' }, { fill: BLACK, back: { fill: WHITE, w: 100, h: 90, rot: -4 } });
   scene.motif('burst-top', { type: 'burst', cx: 470, cy: 36, R: 28, n: 8, k: 0.55, rot: 9 }, { fill: BLACK, back: { fill: WHITE, w: 70, h: 62, rot: 10 } });
-  scene.motif('crescent-bottom', { type: 'crescent', cx: 190, cy: 760, r: 42, rot: -20 }, { fill: BLACK, back: { fill: WHITE, w: 100, h: 100, rot: -6 } });
-  scene.motif('flake-bottom', { type: 'snowflake', cx: 370, cy: 760, R: 40, rot: 15, kind: 'comb' }, { fill: BLACK, back: { fill: PALE, w: 104, h: 96, rot: 5 } });
-  scene.motif('note-bottom', { type: 'note', cx: 550, cy: 772, s: 50, rot: 12 }, { fill: BLACK, back: { fill: WHITE, w: 80, h: 100, rot: -7 } });
-  scene.motif('burst-bottom', { type: 'burst', cx: 700, cy: 760, R: 36, n: 12, k: 0.6, rot: 5 }, { fill: BLACK, back: { fill: WHITE, w: 86, h: 80, rot: 8 } });
+  scene.motif('crescent-bottom', { type: 'crescent', cx: 190, cy: 728, r: 42, rot: -20 }, { fill: BLACK, back: { fill: WHITE, w: 100, h: 100, rot: -6 } });
+  scene.motif('flake-bottom', { type: 'snowflake', cx: 370, cy: 728, R: 40, rot: 15, kind: 'comb' }, { fill: BLACK, back: { fill: PALE, w: 104, h: 96, rot: 5 } });
+  scene.motif('note-bottom', { type: 'note', cx: 550, cy: 740, s: 50, rot: 12 }, { fill: BLACK, back: { fill: WHITE, w: 80, h: 100, rot: -7 } });
+  scene.motif('burst-bottom', { type: 'burst', cx: 700, cy: 728, R: 36, n: 12, k: 0.6, rot: 5 }, { fill: BLACK, back: { fill: WHITE, w: 86, h: 80, rot: 8 } });
 
   // The middle: four light sheets cut into pieces, each with its own value or pattern and tilt.
   scene.sheet('light-top', [[110, 150], [700, 140], [730, 330], [100, 335]], { fill: WHITE, kinds: ['torn', 'torn', 'torn', 'torn'], rot: -2, pattern: 'ruled' });

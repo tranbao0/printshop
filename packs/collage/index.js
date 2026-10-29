@@ -71,8 +71,9 @@ export const collagePack = {
   examples: [
     {
       name: 'collage',
-      // The layout is built in code (examples/collage/scene.js) and shown by this host page.
-      input: 'page.html',
+      // The layout is made in code (examples/collage/scene.js). build.js builds it with the seed and the filter of the preset, and runs every collage check.
+      input: '../../examples/collage/scene.js',
+      build: '../../examples/collage/build.js',
       preset: 'card',
       seed: 302,
       golden: '../../examples/collage/collage.png',

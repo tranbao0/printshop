@@ -419,7 +419,7 @@ function motifPolys(shape, rand) {
  * @property {(pt: Pt, above: number, options?: { shadows?: boolean, tape?: boolean }) => boolean} coveredAbove
  *   True when an item pasted after index `above` covers the point, or its shadow does (`shadows: false` ignores shadows, `tape: false` ignores tape).
  * @property {(pt: Pt) => boolean} inRegion
- * @property {(options?: { marks?: boolean }) => string} svg
+ * @property {(options?: { marks?: boolean, base?: boolean }) => string} svg
  */
 
 /**
@@ -513,13 +513,15 @@ function patternFill(id, kind, base, turn, [cx, cy], outline) {
 /**
  * The scene as one SVG string.
  * @param {Built} built
- * @param {{ marks?: boolean }} [options] `marks: false` leaves the marks out, so the paper can be measured alone.
+ * @param {{ marks?: boolean, base?: boolean }} [options] `marks: false` leaves the marks out, so the paper can be measured alone.
+ *   `base: false` leaves the safety sheet out, so a point that only the base covers shows the page behind it.
  * @returns {string}
  */
-function svgOf(built, { marks = true } = {}) {
+function svgOf(built, { marks = true, base = true } = {}) {
   const { items, width, height } = built;
   let out = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
   items.forEach((item, index) => {
+    if (item.role === 'base' && !base) return;
     if (item.role === 'tape') {
       out += tapeSvg(built, item, index);
       return;
