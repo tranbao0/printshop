@@ -32,6 +32,15 @@ test('a different seed, name or index gives a different sequence', () => {
   assert.notDeepEqual(draw(createStreams(7).stream('hairs', 1), 20), draw(createStreams(7).stream('hairs', 2), 20));
 });
 
+test('the key of a stream is its start state, and changes with seed, name and index', () => {
+  const streams = createStreams(7);
+  assert.equal(streams.key('specks', 3), streamState(7, 'specks', 3));
+  assert.equal(streams.key('specks'), streams.key('specks', 0));
+  assert.notEqual(streams.key('specks'), streams.key('edges'));
+  assert.notEqual(streams.key('specks'), createStreams(8).key('specks'));
+  assert.notEqual(streams.key('specks', 1), streams.key('specks', 2));
+});
+
 test('index 0 is the stream without an index', () => {
   const streams = createStreams(3);
   assert.deepEqual(draw(streams.stream('hairs'), 10), draw(streams.stream('hairs', 0), 10));

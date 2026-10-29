@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  assertChecks, blackShare, checkColourCount, checkCoverage, checkDimensions, checkSize, checkSlivers, checkTonalGap, countProbePixels, findSlivers,
+  assertChecks, blackShare, checkColourCount, checkCoverage, checkDimensions, checkSize, checkSlivers, checkTonalGap, checkToneOrder, countProbePixels, findSlivers,
 } from '../../src/core/checks.js';
 
 /** A grid mask with the given rectangles [x, y, w, h] set to 1. */
@@ -66,6 +66,23 @@ test('tonal gap: passes when the shares are far enough apart and fails when they
   assert.equal(alike.ok, false);
   assert.match(alike.message, /0\.10 apart, needs at least 0\.25/);
   const few = checkTonalGap('nose', { share: 0.9, n: 99 }, { share: 0, n: 500 }, 0.25);
+  assert.equal(few.ok, false);
+  assert.match(few.message, /too few pixels/);
+});
+
+test('tone order: the darker region must print darker by the gap, and a reversed pair fails however far apart it is', () => {
+  const ok = checkToneOrder('ramp', { share: 0.4, n: 500 }, { share: 0.25, n: 500 }, 0.1);
+  assert.equal(ok.ok, true);
+  // The darker gray prints lighter. The absolute gap is large, so checkTonalGap passes this pair, but the order is wrong.
+  const reversed = { darker: { share: 0.25, n: 500 }, lighter: { share: 0.4, n: 500 } };
+  assert.equal(checkTonalGap('ramp', reversed.darker, reversed.lighter, 0.06).ok, true);
+  const wrong = checkToneOrder('ramp', reversed.darker, reversed.lighter, 0.06);
+  assert.equal(wrong.ok, false);
+  assert.match(wrong.message, /-0\.15 darker, needs at least 0\.06 \(the order is reversed\)/);
+  const close = checkToneOrder('ramp', { share: 0.3, n: 500 }, { share: 0.27, n: 500 }, 0.06);
+  assert.equal(close.ok, false);
+  assert.doesNotMatch(close.message, /reversed/);
+  const few = checkToneOrder('ramp', { share: 0.9, n: 99 }, { share: 0, n: 500 }, 0.06);
   assert.equal(few.ok, false);
   assert.match(few.message, /too few pixels/);
 });

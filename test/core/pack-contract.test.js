@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { photocopySteps } from '../../src/core/filters.js';
+import { photocopySteps } from '../../src/core/photocopy.js';
 import { checkSize } from '../../src/core/checks.js';
 
 /** @typedef {import('../../src/core/types.js').StylePack} StylePack */
 
-// A pack of the shape that the contract asks for. The type check of this file is the test: a change to the contract that breaks a pack stops `tsc`.
+// A pack of the shape that the contract asks for. The `@type {StylePack}` annotation is checked by `tsc`: a change to the contract that breaks a pack, such as a missing or an extra part, stops the type check.
+// The test below runs the parts that the contract describes.
 /** @type {StylePack} */
 const pack = {
   name: 'example',
@@ -18,7 +19,6 @@ const pack = {
 };
 
 test('a pack has the parts of the contract', async () => {
-  assert.deepEqual(Object.keys(pack).sort(), ['assets', 'checks', 'examples', 'filters', 'name', 'presets', 'version']);
   assert.ok(pack.filters.every((step) => typeof step.name === 'string' && typeof step.run === 'function' && typeof step.defaults === 'object'));
   const results = await pack.checks({ png: Buffer.alloc(10), width: 1, height: 1 });
   assert.equal(results[0].ok, true);

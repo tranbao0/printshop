@@ -17,7 +17,8 @@ after(async () => {
   await renderer.close();
 });
 
-// The stored images are the reference renders of the test page.
+// The stored images are the reference renders of the test page, made by the render of the profile generator (generator/src/render.mjs).
+// So these tests check that the core renders the same pixels, zones and boxes as the profile generator.
 // The pixels are compared, not the PNG bytes, because the bytes depend on the deflate library of the browser build.
 const samePixels = async (/** @type {Buffer} */ png, /** @type {string} */ goldenName) => {
   const a = await decodeRgba(png);

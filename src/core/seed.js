@@ -2,6 +2,9 @@
 // Every random draw in an image comes from a named stream (for example `specks`, `edges`, `wobble`).
 // A stream depends only on the image seed, its name and an optional index, so a change in one part of an image
 // (a different speck count, a skipped item) never re-rolls the random features of another part.
+// A random feature that has a place in the image (a noise value, a speck, a hair) is tied to its place:
+// noise values are hashed from the position of their grid point (see noise.js) and specks and hairs come from one stream per tile
+// of a fixed grid (see scatter.js). So a taller or wider image keeps the features of the part it shares with a smaller one.
 
 /**
  * A random number source. Every call returns a number in [0, 1).
@@ -15,7 +18,9 @@
  * @property {(name: string, index?: number) => Rng} stream
  *   A fresh stream, starting at its first draw. Two calls with the same name and index give the same sequence,
  *   so a part of the code asks for its stream once and keeps it.
- *   `index` gives one stream per item (the 3rd hair, the 40th speck), so an item draws the same numbers however many draws other items take.
+ *   `index` gives one stream per item (the 3rd hair, the tile at 4,7), so an item draws the same numbers however many draws other items take.
+ * @property {(name: string, index?: number) => number} key
+ *   The 32-bit key of the same stream. Position hashed noise (see noise.js) starts from a key, not from a sequence of draws.
  */
 
 /**
@@ -53,7 +58,7 @@ export function hashName(text) {
  * @param {number} h
  * @returns {number}
  */
-function mix(h) {
+export function mix(h) {
   h ^= h >>> 16;
   h = Math.imul(h, 0x85ebca6b);
   h ^= h >>> 13;
@@ -81,5 +86,6 @@ export function createStreams(seed) {
   return {
     seed,
     stream: (name, index = 0) => createRng(streamState(seed, name, index)),
+    key: (name, index = 0) => streamState(seed, name, index),
   };
 }

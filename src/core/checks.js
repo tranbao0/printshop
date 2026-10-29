@@ -108,8 +108,9 @@ export function blackShare(gray, width, mask, { circle, threshold = 128 } = {}) 
 }
 
 /**
- * Ring check: two regions of paper must print as different tones.
+ * Ring check: two regions of paper must print as different tones, in either order.
  * Their black shares must be at least `gap` apart, and each region needs at least `minPixels` pixels to be measured.
+ * Use `checkToneOrder` when one region must print darker than the other.
  * @param {string} name
  * @param {{ share: number, n: number }} a
  * @param {{ share: number, n: number }} b
@@ -124,6 +125,26 @@ export function checkTonalGap(name, a, b, gap, minPixels = 100) {
   const apart = Math.abs(a.share - b.share);
   const text = `black ${a.share.toFixed(2)} and ${b.share.toFixed(2)}, ${apart.toFixed(2)} apart`;
   return { name, ok: apart >= gap, message: apart >= gap ? text : `${text}, needs at least ${gap}` };
+}
+
+/**
+ * Tone order check: the region that should print darker must have a black share at least `gap` above the region that should print lighter.
+ * A pair in the wrong order fails however far apart the shares are. Each region needs at least `minPixels` pixels to be measured.
+ * @param {string} name
+ * @param {{ share: number, n: number }} darker The region that must print darker.
+ * @param {{ share: number, n: number }} lighter The region that must print lighter.
+ * @param {number} gap
+ * @param {number} [minPixels]
+ * @returns {CheckResult}
+ */
+export function checkToneOrder(name, darker, lighter, gap, minPixels = 100) {
+  if (darker.n < minPixels || lighter.n < minPixels) {
+    return { name, ok: false, message: `too few pixels to measure (${darker.n} and ${lighter.n}, at least ${minPixels} needed)` };
+  }
+  const step = darker.share - lighter.share;
+  const text = `black ${darker.share.toFixed(2)} for the darker region and ${lighter.share.toFixed(2)} for the lighter one, ${step.toFixed(2)} darker`;
+  if (step >= gap) return { name, ok: true, message: text };
+  return { name, ok: false, message: `${text}, needs at least ${gap}${step < 0 ? ' (the order is reversed)' : ''}` };
 }
 
 /**
