@@ -39,12 +39,14 @@
  * An input that the golden tests render.
  * @typedef {object} PackExample
  * @property {string} name
+ * @property {string} [kind] What the pack builds from the layout. The pack names its kinds. Default `page`: one still page.
  * @property {string} input Path of the layout, relative to the pack folder: an HTML file, or the module that makes the layout in code.
  * @property {string} [build] Path of a module (relative to the pack folder) whose default export is a `PackBuildFn`.
  *   A pack whose layout is made in code needs it, so a runner can build the example. A runner without it renders `input` as an HTML page.
  * @property {string} preset The name of a preset of the pack.
  * @property {number} seed A fixed seed, so the output is the same on every run. It takes the place of the seed of the preset.
- * @property {string} golden Path of the stored golden image, relative to the pack folder.
+ * @property {string} golden Path of the stored golden image, relative to the pack folder. It is the image that the build of this kind gives.
+ * @property {Record<string, any>} [options] More options for the build of this kind, such as the label of an animated title.
  */
 
 /**

@@ -2,7 +2,7 @@
 // gray, contrast, calm zones, ink bleed, a plain threshold and output levels.
 // A step reads and writes a shared `Work` record. Every random draw comes from a named stream (see seed.js),
 // so a change in one step never re-rolls the random features of another.
-// The steps of one look (for example the cheap-copier look in photocopy.js) build on this module.
+// The steps of a style pack (for example the cheap-copier look of the zine pack) build on this module.
 import { createStreams } from './seed.js';
 import { fractalField } from './noise.js';
 import { buildZoneMasks, calmAt, calmDefaults, zonePadDefaults } from './zones.js';
