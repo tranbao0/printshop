@@ -96,9 +96,9 @@ export function exampleScene(seed = SEED) {
     marks: [{ poly: triangle(560, 540, 70, 66) }],
   });
 
-  // Tape across the corners of the sheets and tiles, clear of every mark.
-  scene.tape('tape-1', 118, 150, 120, 36, 38);
+  // Tape across the edges of the sheets, clear of every mark. Over gray paper it prints as a lighter band.
+  scene.tape('tape-1', 690, 110, 120, 34, -22);
   scene.tape('tape-2', 725, 300, 130, 38, -35);
-  scene.tape('tape-3', 640, 640, 120, 34, -12);
+  scene.tape('tape-3', 735, 585, 110, 32, 32);
   return scene;
 }
