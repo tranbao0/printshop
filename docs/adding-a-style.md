@@ -13,7 +13,7 @@ A pack name uses lowercase letters, digits and single dashes, and starts with a 
 
 - A project with printshop as a dependency, and Chromium installed.
   [The README](../README.md#install) shows how.
-- Node.js 22.2.0 or newer.
+- Node.js 22.11.0 or newer.
 
 Run every command in the root folder of your project.
 

@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['22.2.0', '24']
+        node: ['22.11.0', '24']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,7 +32,7 @@ jobs:
       - run: npx tsc -p .
       # The declaration files in types/ are generated from the JSDoc and committed. They must match the source.
       - run: npm run types:check
-      - run: node --test
+      - run: node --test --test-timeout=180000
 
   # One check with a fixed name for the branch rules of `main`, so the Node versions can change without a change to the rules.
   test:
