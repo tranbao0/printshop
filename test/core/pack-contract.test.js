@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { photocopySteps } from '../../src/core/photocopy.js';
+import { grayStep, thresholdStep } from '../../src/core/filters.js';
 import { checkSize } from '../../src/core/checks.js';
 
 /** @typedef {import('../../src/core/types.js').StylePack} StylePack */
@@ -11,7 +11,7 @@ import { checkSize } from '../../src/core/checks.js';
 const pack = {
   name: 'example',
   version: '0.0.0',
-  filters: photocopySteps,
+  filters: [grayStep, thresholdStep],
   presets: { card: { width: 800, seed: 1, filter: { contrast: 1.2 } } },
   assets: [{ name: 'Example Sans', kind: 'font', file: 'fonts/example.woff2', license: 'OFL-1.1', licenseFile: 'fonts/OFL.txt' }],
   checks: ({ png }) => [checkSize('example', png.length, 1000)],

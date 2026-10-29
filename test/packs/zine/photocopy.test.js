@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { photocopy, photocopyDefaults, photocopySteps } from '../../src/core/photocopy.js';
-import { runFilter } from '../../src/core/filters.js';
-import { decodeGrayPng, decodeRgba } from '../../src/core/encode.js';
+import { photocopy, photocopyDefaults, photocopySteps } from '../../../packs/zine/photocopy.js';
+import { runFilter } from '../../../src/core/filters.js';
+import { decodeGrayPng, decodeRgba } from '../../../src/core/encode.js';
 
 const fixture = (/** @type {string} */ name) => fileURLToPath(new URL(`./fixtures/${name}`, import.meta.url));
+const coreFixture = (/** @type {string} */ name) => fileURLToPath(new URL(`../../core/fixtures/${name}`, import.meta.url));
 
 // A plain white sheet. The cheap toner specks are the only thing that can mark it.
 const white = (/** @type {number} */ width, /** @type {number} */ height) => ({ data: new Uint8Array(width * height * 4).fill(255), width, height });
@@ -149,8 +150,8 @@ test('the hairs of a tile draw from the stream of the tile, so more hairs leave 
 // They are not a comparison with the profile generator: its filter draws every random feature from one shared sequence,
 // and the seeded randomness rule (one named stream per purpose) gives other numbers. The render and encode references are the profile ones.
 test('the photocopy of the test page equals the stored result', async () => {
-  const page = await decodeRgba(await readFile(fixture('render-all.png')));
-  const { zones } = JSON.parse(await readFile(fixture('render-meta.json'), 'utf8')).all;
+  const page = await decodeRgba(await readFile(coreFixture('render-all.png')));
+  const { zones } = JSON.parse(await readFile(coreFixture('render-meta.json'), 'utf8')).all;
   const golden = await decodeGrayPng(await readFile(fixture('photocopy-all.png')));
   const out = photocopy(page, { seed: 5, zones });
   assert.equal(out.width, golden.width);
@@ -158,8 +159,8 @@ test('the photocopy of the test page equals the stored result', async () => {
 });
 
 test('the photocopy of the transparent test layer equals the stored result', async () => {
-  const page = await decodeRgba(await readFile(fixture('render-cutout.png')));
-  const { zones } = JSON.parse(await readFile(fixture('render-meta.json'), 'utf8')).cutout;
+  const page = await decodeRgba(await readFile(coreFixture('render-cutout.png')));
+  const { zones } = JSON.parse(await readFile(coreFixture('render-meta.json'), 'utf8')).cutout;
   const golden = await decodeGrayPng(await readFile(fixture('photocopy-cutout.png')));
   const out = photocopy(page, { seed: 6, zones });
   assert.ok(out.alpha);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HAIR_REACH, photocopy, speckReach } from '../../src/core/photocopy.js';
+import { HAIR_REACH, photocopy, speckReach } from '../../../packs/zine/photocopy.js';
 
 // Seeded randomness rule: a change in one part of an image must not re-roll random features elsewhere.
 // A taller or wider page keeps the features of the part it shares with the smaller one.

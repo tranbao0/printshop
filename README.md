@@ -15,7 +15,6 @@ It is plain JavaScript (ES modules) with JSDoc types, checked by `tsc` in strict
 | --- | --- |
 | `render.js` | Renders an HTML page to pixels with headless Chromium (Playwright). |
 | `filters.js` | A chain of small, seeded filter steps over an RGBA buffer, and the general steps: gray, contrast, calm zones, ink bleed, threshold, levels. |
-| `photocopy.js` | The cheap-copier look, built from those steps: halftone, toner, drum streaks, specks, hairs. |
 | `zones.js` | Calm zones: areas where a filter step is weaker or off. |
 | `noise.js` | Smooth noise fields for the filter steps. |
 | `scatter.js` | Tiles for random features with a place in the image (specks, hairs, streaks). |
