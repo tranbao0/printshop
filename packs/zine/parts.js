@@ -420,10 +420,13 @@
    * Burnt sheet: charred edge that eats into the paper, then a gray halftone singe zone, then clean paper.
    * The noise fields are hashed from their grid points (streams `burn.big`, `burn.mid`, `burn.small`, `burn.fine`, `burn.grit`),
    * so a taller or wider sheet keeps the burn of the part it shares with a smaller one.
+   * A sheet in the base layer is not drawn when the page is rendered as the title layer, where it is hidden (see zine.css).
    * @param {HTMLElement} el
    * @param {{ seed?: number, depth?: number, singe?: number, reach?: number }} [options]
    */
   function burn(el, { seed = 1, depth = 120, singe = 110, reach = 100 } = {}) {
+    // The burn is the slow part of a page. A layer that hides the element does not need its pixels.
+    if ((layer === 'title' && el.closest('.base-layer')) || (layer === 'base' && el.closest('.title-layer'))) return;
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     const big = noise(key(seed, 'burn.big'), 210);

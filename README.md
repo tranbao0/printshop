@@ -3,8 +3,8 @@
 Turns layouts into print-look images: photocopied zine pages, paper collages, ransom-note titles, and animated SVGs that play inside GitHub.
 
 Status: early.
-This release holds the style-neutral core.
-Style packs, the command-line tool and the full docs follow.
+This release holds the style-neutral core and the zine pack.
+The other style packs, the command-line tool and the full docs follow.
 
 ## The core
 
@@ -24,6 +24,32 @@ It is plain JavaScript (ES modules) with JSDoc types, checked by `tsc` in strict
 | `checks.js` | Output checks: size, dimensions, colour count, coverage, slivers, tonal gap, tone order. |
 | `seed.js` | Seeded random streams. |
 | `types.js` | The style pack contract. |
+
+## The zine pack
+
+The zine pack lives in `packs/zine/`.
+It holds the photocopy look (halftone, toner, drum streaks, specks, hairs), the page parts for zine layouts, six fonts with their license files, and the animated ransom-letter title.
+
+| File | What it does |
+| --- | --- |
+| `index.js` | The pack: filter steps, presets, fonts with licenses, checks, examples and size budgets. |
+| `photocopy.js` | The photocopy look, built from the steps of the core. |
+| `zine.css` and `parts.js` | A page loads these. `parts.js` draws torn and cut paper, tape, track labels, worn stamps, burnt sheets and cut-out letter tiles. |
+| `ransom-svg.js` | The animated title: entrance, flips, hops and rests, all driven by options. |
+| `build.js` | `buildPage` and `buildRansomTitle`: render a layout, run the photocopy look, encode, and run the checks. |
+| `checks.js` | The size budgets, and the check that an animated SVG has no script and no external reference. |
+| `frames.js` | Shows an animated SVG at chosen times, to check its motion. |
+
+Two examples show the pack. Run them from the root of the repository:
+
+```sh
+node examples/zine-page/build.js
+node examples/ransom-title/build.js
+```
+
+The first writes `examples/zine-page/page.png`.
+The second writes `examples/ransom-title/title.svg` and `title-still.png`.
+The stored outputs are the golden images of the tests.
 
 ## Seeded randomness
 
