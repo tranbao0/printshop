@@ -53,6 +53,10 @@ You need Node.js 22.2.0 or newer.
 The package installs the program `printshop` in `node_modules/.bin`.
 Run it with `npx printshop`.
 
+The package ships type declarations in `types/`, so a project that checks its own code with `strict` and `checkJs` can import the package without errors.
+The declarations use the types of Node.js, so the project needs `@types/node`.
+The declarations are generated from the JSDoc of the source: run `npm run types` after you change a type, and commit the result.
+
 ## Try the examples
 
 The package ships its examples.
@@ -224,6 +228,7 @@ Clone the repository, then install the packages and the browser, and run the che
 npm ci --ignore-scripts
 npx playwright install --with-deps --only-shell chromium
 npx tsc -p .
+npm run types:check
 node --test
 ```
 

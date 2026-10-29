@@ -1,6 +1,6 @@
 {
   "name": "@tranbao0/printshop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Turns layouts into print-look images: photocopied zine pages, paper collages, ransom-note titles and animated SVGs.",
   "license": "MIT",
   "author": "Bao Tran",
@@ -12,13 +12,23 @@
   "bin": {
     "printshop": "bin/printshop.js"
   },
+  "types": "./types/src/core/types.d.ts",
   "engines": {
     "node": ">=22.2.0"
   },
   "exports": {
-    "./core/*": "./src/core/*.js",
-    "./packs/zine": "./packs/zine/index.js",
-    "./packs/collage": "./packs/collage/index.js",
+    "./core/*": {
+      "types": "./types/src/core/*.d.ts",
+      "default": "./src/core/*.js"
+    },
+    "./packs/zine": {
+      "types": "./types/packs/zine/index.d.ts",
+      "default": "./packs/zine/index.js"
+    },
+    "./packs/collage": {
+      "types": "./types/packs/collage/index.d.ts",
+      "default": "./packs/collage/index.js"
+    },
     "./packs/*": "./packs/*"
   },
   "files": [
@@ -26,10 +36,13 @@
     "src",
     "packs",
     "templates",
-    "examples"
+    "examples",
+    "types"
   ],
   "scripts": {
     "typecheck": "tsc -p .",
+    "types": "node scripts/build-types.js",
+    "types:check": "node scripts/build-types.js --check",
     "test": "node --test"
   },
   "dependencies": {
