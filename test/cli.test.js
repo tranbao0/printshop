@@ -158,6 +158,8 @@ test('new-style: a new pack builds its example and passes its own test out of th
   const made = await printshop(['new-style', 'riso-test'], { cwd: project });
   assert.equal(made.code, 0, made.stderr);
   assert.match(made.stdout, /created packs[\\/]riso-test/);
+  // The project has no package.json that says "type": "module", so the packs folder gets one. Node before 22.7 needs it to load the pack.
+  assert.deepEqual(JSON.parse(await readFile(path.join(project, 'packs/package.json'), 'utf8')), { type: 'module' });
   for (const file of ['index.js', 'filter.js', 'README.md', 'pack.test.js', 'example/page.html', 'example/page.png']) await access(path.join(project, 'packs/riso-test', file));
   const index = await readFile(path.join(project, 'packs/riso-test/index.js'), 'utf8');
   assert.match(index, /name: 'riso-test'/);
@@ -205,6 +207,11 @@ test('new-style: bad names and the folder option', async () => {
   const r = await printshop(['new-style', 'tag-test', '--dir', project], { cwd: work });
   assert.equal(r.code, 0, r.stderr);
   await access(path.join(project, 'packs/tag-test/index.js'));
+  // A project that is already an ES module project keeps its packs folder as it is.
+  const esm = await mkdtemp(path.join(work, 'esm-'));
+  await writeFile(path.join(esm, 'package.json'), '{ "type": "module" }');
+  assert.equal((await printshop(['new-style', 'tag-test', '--dir', esm], { cwd: work })).code, 0);
+  await assert.rejects(access(path.join(esm, 'packs/package.json')));
 });
 
 test('ref frames: without ffmpeg it says so and exits with 1', async () => {

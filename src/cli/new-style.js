@@ -30,6 +30,25 @@ const BINARY = /\.(png|jpe?g|gif|webp|ttf|otf|woff2?)$/i;
 const exists = (/** @type {string} */ file) => access(file).then(() => true, () => false);
 
 /**
+ * Tells whether the `.js` files in a folder are ES modules: the nearest `package.json` above it says `"type": "module"`.
+ * Node before 22.7 reads a `.js` file as CommonJS unless a package.json says otherwise.
+ * @param {string} folder
+ */
+async function isModuleScope(folder) {
+  for (let dir = folder; ; dir = path.dirname(dir)) {
+    const text = await readFile(path.join(dir, 'package.json'), 'utf8').catch(() => null);
+    if (text !== null) {
+      try {
+        return JSON.parse(text).type === 'module';
+      } catch {
+        return false;
+      }
+    }
+    if (path.dirname(dir) === dir) return false;
+  }
+}
+
+/**
  * Lists the files of a folder, with paths relative to it.
  * @param {string} root
  * @param {string} [sub]
@@ -79,6 +98,12 @@ export async function run(args, io) {
   }
   const where = shown(io.cwd, target);
   io.out(`created ${where}`);
+  // The pack is made of ES modules. A project that is not an ES module project needs a package.json in packs/ that says so.
+  const packsFolder = path.join(project, 'packs');
+  if (!(await isModuleScope(packsFolder)) && !(await exists(path.join(packsFolder, 'package.json')))) {
+    await writeFile(path.join(packsFolder, 'package.json'), '{\n  "type": "module"\n}\n');
+    io.out(`created ${shown(io.cwd, path.join(packsFolder, 'package.json'))} (the packs are ES modules)`);
+  }
   io.out('');
   io.out('Next:');
   io.out(`  printshop build ${path.join(where, 'example', 'page.html')}`);
