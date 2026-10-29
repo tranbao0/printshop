@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #fff; }
+  #page { position: relative; width: 400px; height: 300px; background: #fff; overflow: hidden; }
+  .box { position: absolute; }
+  body[data-layer="cutout"] > #page > :not(#cutout) { display: none; }
+  body[data-layer="cutout"], body[data-layer="cutout"] html, body[data-layer="cutout"] #page { background: none; }
+</style>
+</head>
+<body>
+<div id="page">
+  <div class="box" style="left: 20px; top: 20px; width: 120px; height: 60px; background: #000" data-box="header"></div>
+  <div class="box" style="left: 160px; top: 20px; width: 100px; height: 60px; background: #808080" data-clean></div>
+  <div class="box" style="left: 280px; top: 20px; width: 100px; height: 60px; background: #c0c0c0" data-soft></div>
+  <div class="box" style="left: 20px; top: 110px; width: 360px; height: 40px; background: #404040" data-nospeck></div>
+  <div class="box" style="left: 20px; top: 180px; width: 160px; height: 100px; background: #e0e0e0" data-box="paper"></div>
+  <div class="box" id="swatch" style="left: 200px; top: 180px; width: 60px; height: 100px; background: #f00"></div>
+  <div class="box" id="cutout" style="left: 280px; top: 180px; width: 100px; height: 100px; background: #202020" data-box="cutout"></div>
+</div>
+<script>
+  const params = new URLSearchParams(location.search);
+  const layer = params.get('layer') || 'all';
+  document.body.dataset.layer = layer.split('&')[0];
+  if (layer.startsWith('cutout')) document.documentElement.style.background = 'none';
+  if (window.PAGE_DATA && window.PAGE_DATA.swatch) document.getElementById('swatch').style.background = window.PAGE_DATA.swatch;
+  document.body.setAttribute('data-ready', '');
+</script>
+</body>
+</html>
