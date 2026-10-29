@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper collage</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #fff; }
+  #page { position: relative; overflow: hidden; }
+  svg { position: absolute; left: 0; top: 0; }
+</style>
+</head>
+<body>
+<div id="page"></div>
+<script>
+// The host page of the collage pack. A collage is built in code (see scene.js) and handed over as
+// window.PAGE_DATA = { svg, width, height, background }. The page shows the SVG on a page of that size.
+// A magenta background (the coverage probe) shows every pixel that no paper covers.
+const { svg, width, height, background } = window.PAGE_DATA;
+const page = document.getElementById('page');
+page.style.width = width + 'px';
+page.style.height = height + 'px';
+page.style.background = background || '#fff';
+page.innerHTML = svg;
+document.body.dataset.ready = '1';
+</script>
+</body>
+</html>
