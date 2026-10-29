@@ -18,7 +18,7 @@ import { decodeRgba, encodePalettePng } from './encode.js';
  * @property {number} [width] Page width in pixels. Default 1600.
  * @property {unknown} [data] Available to the page as window.PAGE_DATA.
  * @property {number} seed The seed of the filter.
- * @property {Filter} filter The filter to run, for example `photocopy` from `photocopy.js`, or a chain made with `runFilter`.
+ * @property {Filter} filter The filter to run, for example `photocopy` from the zine pack, or a chain made with `runFilter`.
  * @property {Record<string, any>} [filterOptions] More options for the filter, for example the overrides of a style preset.
  *   The `seed` and the `zones` of the page win over the same names here.
  */

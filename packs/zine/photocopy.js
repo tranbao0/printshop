@@ -2,20 +2,20 @@
 // built from the general steps of filters.js and steps of its own.
 // Every random draw comes from a named stream (see seed.js). Features with a place in the image (specks, hairs, drum streaks)
 // come from one stream per tile (see scatter.js), so a taller or wider page keeps the features of the part it shares with a smaller page.
-import { clamp01, bleedStep, contrastStep, grayStep, levelsStep, runFilter, withDefaults, zonesStep } from './filters.js';
-import { noiseField, fractalField } from './noise.js';
-import { TILE, countFor, tiles } from './scatter.js';
-import { calmAt, calmDefaults, touches, zonePadDefaults } from './zones.js';
+import { clamp01, bleedStep, contrastStep, grayStep, levelsStep, runFilter, withDefaults, zonesStep } from '../../src/core/filters.js';
+import { noiseField, fractalField } from '../../src/core/noise.js';
+import { TILE, countFor, tiles } from '../../src/core/scatter.js';
+import { calmAt, calmDefaults, touches, zonePadDefaults } from '../../src/core/zones.js';
 
-/** @typedef {import('./filters.js').ContrastOptions} ContrastOptions */
-/** @typedef {import('./filters.js').ZonesOptions} ZonesOptions */
-/** @typedef {import('./filters.js').BleedOptions} BleedOptions */
-/** @typedef {import('./filters.js').LevelsOptions} LevelsOptions */
-/** @typedef {import('./filters.js').FilterStep<any>} AnyStep */
-/** @typedef {import('./filters.js').GrayImage} GrayImage */
-/** @typedef {import('./filters.js').RgbaImage} RgbaImage */
-/** @typedef {import('./seed.js').Rng} Rng */
-/** @typedef {import('./filters.js').Work} Work */
+/** @typedef {import('../../src/core/filters.js').ContrastOptions} ContrastOptions */
+/** @typedef {import('../../src/core/filters.js').ZonesOptions} ZonesOptions */
+/** @typedef {import('../../src/core/filters.js').BleedOptions} BleedOptions */
+/** @typedef {import('../../src/core/filters.js').LevelsOptions} LevelsOptions */
+/** @typedef {import('../../src/core/filters.js').FilterStep<any>} AnyStep */
+/** @typedef {import('../../src/core/filters.js').GrayImage} GrayImage */
+/** @typedef {import('../../src/core/filters.js').RgbaImage} RgbaImage */
+/** @typedef {import('../../src/core/seed.js').Rng} Rng */
+/** @typedef {import('../../src/core/filters.js').Work} Work */
 
 /**
  * Every knob of the cheap-copier look. All values are in pixels of the 1600px wide source.
@@ -69,7 +69,7 @@ export const speckReach = (sizeSpread) => Math.ceil(0.7 + sizeSpread + 1);
  * The width is cut in bands of 400 px, and every band has its own stream (`streaks`, index = band),
  * so a wider page keeps the streaks of the columns it shares with a narrower one.
  * Each streak takes four draws, whatever they decide.
- * @param {import('./seed.js').Streams} streams
+ * @param {import('../../src/core/seed.js').Streams} streams
  * @param {number} width
  * @param {number} count Streaks per 1600 px of width.
  * @param {number} strength
@@ -152,7 +152,7 @@ function addHair(out, width, height, rand, x0, y0, keepOut = null) {
  * so a speck that does not land (outside the ink, in a calm zone, on the wrong colour) leaves every later speck where it was.
  * A speck centred outside the image still reaches into it, and takes its colour test from the nearest pixel.
  * @param {Work} work
- * @param {import('./seed.js').Streams} streams
+ * @param {import('../../src/core/seed.js').Streams} streams
  * @param {string} name The name of the stream.
  * @param {number} density Specks per pixel of area.
  * @param {number} sizeSpread Pixels added to the radius at most: the radius is 0.7 plus a random share cubed of this.
@@ -180,7 +180,7 @@ function scatterSpecks(work, streams, name, density, sizeSpread, colour) {
   }
 }
 
-/** @type {import('./filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'toner'>>} */
+/** @type {import('../../src/core/filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'toner'>>} */
 const tonerStep = {
   name: 'toner',
   defaults: { toner: photocopyDefaults.toner },
@@ -212,7 +212,7 @@ const tonerStep = {
   },
 };
 
-/** @type {import('./filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'halftone' | 'edgeNoise' | 'calm'>>} */
+/** @type {import('../../src/core/filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'halftone' | 'edgeNoise' | 'calm'>>} */
 const halftoneStep = {
   name: 'halftone',
   defaults: { halftone: photocopyDefaults.halftone, edgeNoise: photocopyDefaults.edgeNoise, calm: photocopyDefaults.calm },
@@ -246,7 +246,7 @@ const halftoneStep = {
   },
 };
 
-/** @type {import('./filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'specks'>>} */
+/** @type {import('../../src/core/filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'specks'>>} */
 const specksStep = {
   name: 'specks',
   defaults: { specks: photocopyDefaults.specks },
@@ -257,7 +257,7 @@ const specksStep = {
   },
 };
 
-/** @type {import('./filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'specks'>>} */
+/** @type {import('../../src/core/filters.js').FilterStep<Pick<PhotocopyOptions, 'seed' | 'specks'>>} */
 const hairsStep = {
   name: 'hairs',
   defaults: { specks: photocopyDefaults.specks },
@@ -274,7 +274,7 @@ const hairsStep = {
 
 /**
  * The steps of the cheap-copier look, in order.
- * @type {import('./filters.js').FilterStep<PhotocopyOptions>[]}
+ * @type {import('../../src/core/filters.js').FilterStep<PhotocopyOptions>[]}
  */
 export const photocopySteps = [
   grayStep,

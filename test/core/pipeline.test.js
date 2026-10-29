@@ -4,8 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { openRenderer } from '../../src/core/render.js';
 import { copyLayer, renderCopy } from '../../src/core/pipeline.js';
 import { decodeGrayPng, encodePalettePng } from '../../src/core/encode.js';
-import { photocopy } from '../../src/core/photocopy.js';
 import { decodeRgba } from '../../src/core/encode.js';
+import { bleedStep, contrastStep, grayStep, runFilter, thresholdStep, zonesStep } from '../../src/core/filters.js';
+
+// A small filter made of core steps, so these tests do not depend on a style pack.
+/** @type {import('../../src/core/filters.js').FilterStep<any>[]} */
+const steps = [grayStep, contrastStep, zonesStep, bleedStep, thresholdStep];
+/** @type {import('../../src/core/pipeline.js').Filter} */
+const photocopy = (image, options) => runFilter(steps, image, options);
 
 const page = fileURLToPath(new URL('./fixtures/page.html', import.meta.url));
 
@@ -65,7 +71,7 @@ test('filterOptions reach the filter, and the seed and the zones of the page win
 test('a filter option given to copyLayer changes the output', async () => {
   const base = { seed: 8, width: 400, filter: photocopy };
   const plain = await copyLayer(renderer, page, base);
-  const snapped = await copyLayer(renderer, page, { ...base, filterOptions: { contrast: 3, specks: { black: 0, white: 0, hairs: 0 } } });
+  const snapped = await copyLayer(renderer, page, { ...base, filterOptions: { contrast: 3 } });
   assert.ok(!plain.equals(snapped));
   const same = await copyLayer(renderer, page, { ...base, filterOptions: {} });
   assert.ok(plain.equals(same));

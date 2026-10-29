@@ -13,10 +13,14 @@
     "node": ">=22.2.0"
   },
   "exports": {
-    "./core/*": "./src/core/*.js"
+    "./core/*": "./src/core/*.js",
+    "./packs/zine": "./packs/zine/index.js",
+    "./packs/zine/*": "./packs/zine/*"
   },
   "files": [
-    "src"
+    "src",
+    "packs",
+    "examples"
   ],
   "scripts": {
     "typecheck": "tsc -p .",

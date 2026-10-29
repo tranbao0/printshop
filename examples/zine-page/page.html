@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zine page</title>
+<link rel="stylesheet" href="../../packs/zine/zine.css">
+<style>
+  #page { height: 1000px; }
+  .sheet { position: absolute; left: 56px; top: 56px; width: 1488px; height: 888px; background-color: #fff; }
+  .smudge { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.5), rgba(0,0,0,0)); }
+  .note { left: 130px; top: 290px; width: 700px; padding: 52px 56px 46px 62px; font-size: 46px; line-height: 1.3; transform: rotate(-1.4deg); }
+  .note b { font-family: "Permanent Marker", cursive; font-weight: normal; font-size: 62px; display: block; margin-bottom: 14px; }
+  .slip { left: 760px; top: 770px; padding: 30px 44px 22px; font-size: 42px; line-height: 1.2; white-space: nowrap; transform: rotate(1.6deg); }
+  .headline { position: absolute; left: 960px; top: 190px; font-family: "Anton", sans-serif; font-size: 150px; line-height: 1; transform: rotate(3deg); }
+  .stamp-issue { position: absolute; left: 930px; top: 560px; font-family: "Archivo Black", sans-serif; font-size: 84px; line-height: 1; transform: rotate(-6deg); }
+  .tape-piece { position: absolute; width: 190px; height: 58px; }
+  .scribble { position: absolute; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="page">
+  <div class="base-layer">
+    <div class="sheet" id="sheet"></div>
+    <div class="smudge" style="left:40px;top:560px;width:340px;height:300px;opacity:.55"></div>
+
+    <div class="track" id="track" data-box="header">TRACK 02 - Cut and Paste</div>
+
+    <div class="headline">FIELD<br>NOTES</div>
+
+    <div class="part note" id="note">
+      <b>Issue 07</b>
+      Everything here was cut out, taped down and run through a tired copier.
+    </div>
+
+    <div class="part slip" id="slip">Made at the kitchen table.</div>
+
+    <svg class="scribble" style="left:110px;top:760px" width="700" height="60" viewBox="0 0 700 60" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 30 C 120 10, 220 48, 340 26 S 560 40, 690 20"/>
+      <path d="M40 46 C 160 32, 280 54, 400 40 S 560 50, 660 38" stroke-width="4"/>
+    </svg>
+
+    <div class="stamp stamp-issue" id="stampIssue">ISSUE 07</div>
+
+    <div class="tape-piece" id="tapeA" style="left:78px;top:272px;transform:rotate(-38deg)"></div>
+    <div class="tape-piece" id="tapeB" style="left:700px;top:262px;transform:rotate(32deg)"></div>
+    <div class="tape-piece" id="tapeC" style="left:700px;top:748px;transform:rotate(-24deg)"></div>
+  </div>
+</div>
+<script src="../../packs/zine/parts.js"></script>
+<script>
+  zine.ready(['Anton', 'Archivo Black', 'Special Elite', 'Permanent Marker'], () => {
+    const $ = (id) => document.getElementById(id);
+    zine.burn($('sheet'), { seed: 135, depth: 150, singe: 50, reach: 92 });
+    zine.track($('track'), { seed: 5 });
+    zine.paper($('note'), { seed: 21, sides: { top: 'cut', right: 'torn', bottom: 'cut', left: 'torn' }, shadow: { fill: '#555', x: 8, y: 9 } });
+    zine.paper($('slip'), { seed: 22, sides: { top: 'torn', right: 'cut', bottom: 'torn', left: 'cut' }, shadow: { fill: '#555', x: 7, y: 8 } });
+    const tapeLook = { fill: 'rgba(150,150,150,0.8)' };
+    zine.tape($('tapeA'), { seed: 31, ...tapeLook });
+    zine.tape($('tapeB'), { seed: 32, ...tapeLook });
+    zine.tape($('tapeC'), { seed: 33, ...tapeLook });
+    const stamp = $('stampIssue');
+    // The ink wears off the border and the corners, and the lettering stays whole.
+    zine.wear(stamp, { seed: 33, keepOut: [{ x: 20, y: 8, w: stamp.offsetWidth - 40, h: stamp.offsetHeight - 16 }] });
+  });
+</script>
+</body>
+</html>
