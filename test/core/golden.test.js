@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { assertMatchesGolden, compareGray, defaultTolerance, withinTolerance } from '../../src/core/golden.js';
+import { assertMatchesGolden, compareGray, defaultTolerance, updateGoldensRequested, withinTolerance } from '../../src/core/golden.js';
 import { encodePalettePng } from '../../src/core/encode.js';
 
 /** A white image of 40 by 40 with the pixels at the given places black. */
@@ -45,4 +45,10 @@ test('assertMatchesGolden passes an equal image, fails a changed one and writes 
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('UPDATE_GOLDENS asks for new golden images only with 1 or true', () => {
+  for (const value of ['1', 'true', 'TRUE', ' 1 ']) assert.equal(updateGoldensRequested({ UPDATE_GOLDENS: value }), true, value);
+  for (const value of [undefined, '', '0', 'false', 'no', 'yes']) assert.equal(updateGoldensRequested({ UPDATE_GOLDENS: value }), false, String(value));
+  assert.equal(updateGoldensRequested({}), false);
 });

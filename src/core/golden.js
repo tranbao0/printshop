@@ -68,14 +68,24 @@ export function withinTolerance(result, total, tolerance = defaultTolerance) {
 }
 
 /**
+ * Tells whether the environment asks to write new golden images: `UPDATE_GOLDENS` is `1` or `true`.
+ * Any other value, such as `0` or an empty text, leaves the golden images as they are.
+ * @param {Record<string, string | undefined>} [env]
+ * @returns {boolean}
+ */
+export function updateGoldensRequested(env = process.env) {
+  return ['1', 'true'].includes((env.UPDATE_GOLDENS ?? '').trim().toLowerCase());
+}
+
+/**
  * Asserts that a PNG equals its golden image within the tolerance.
- * With `update` (default: the `UPDATE_GOLDENS` environment variable is set) it writes the PNG as the new golden image instead.
+ * With `update` (default: `UPDATE_GOLDENS` is `1` or `true`, see `updateGoldensRequested`) it writes the PNG as the new golden image instead.
  * Look at the new image before you keep it.
  * @param {Buffer} png The fresh image.
  * @param {string} goldenFile Path of the golden PNG.
  * @param {{ update?: boolean, tolerance?: Tolerance, name?: string }} [options]
  */
-export async function assertMatchesGolden(png, goldenFile, { update = Boolean(process.env.UPDATE_GOLDENS), tolerance = defaultTolerance, name = goldenFile } = {}) {
+export async function assertMatchesGolden(png, goldenFile, { update = updateGoldensRequested(), tolerance = defaultTolerance, name = goldenFile } = {}) {
   if (update) await writeFile(goldenFile, png);
   const fresh = await decodeGrayPng(png);
   const golden = await decodeGrayPng(await readFile(goldenFile));

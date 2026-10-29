@@ -45,7 +45,7 @@ export function parse(args, options) {
 export function wholeNumber(name, text, { min = 0 } = {}) {
   if (text === undefined) return undefined;
   const n = Number(text);
-  if (!Number.isInteger(n) || n < min) throw new UsageError(`${name} must be a whole number, ${min} or more, not "${text}"`);
+  if (text.trim() === '' || !Number.isInteger(n) || n < min) throw new UsageError(`${name} must be a whole number, ${min} or more, not "${text}"`);
   return n;
 }
 

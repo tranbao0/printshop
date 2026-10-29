@@ -3,11 +3,11 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 import { assertMatchesGolden } from '../src/core/golden.js';
 import { fractalField } from '../src/core/noise.js';
@@ -51,6 +51,11 @@ after(async () => {
 
 const ffmpeg = await findFfmpeg().catch(() => null);
 const NO_FFMPEG = 'ffmpeg not found: set FFMPEG to the ffmpeg program, or put ffmpeg on PATH, to run this test';
+
+// In CI (the CI environment variable is set) a missing ffmpeg is a failure, so that the frame sheet test cannot be skipped there without notice.
+test('ffmpeg is present when CI runs the tests', { skip: process.env.CI ? false : 'not in CI' }, () => {
+  assert.ok(ffmpeg, NO_FFMPEG);
+});
 
 test('the tool shows its help and the version, and a wrong call gives exit code 2', async () => {
   const help = await printshop(['--help'], { cwd: work });
@@ -135,7 +140,7 @@ test('build: a wrong call gives a message and a failure, and nothing replaces a 
   assert.equal(preset.code, 1);
   assert.match(preset.stderr, /unknown preset "poster"/);
   assert.equal((await printshop(['build', 'examples/zine-page/page.html', '--seed', 'x'], { cwd: root })).code, 2);
-  const module = await printshop(['build', 'src/core/seed.js', '--out', path.join(work, 'x')], { cwd: root });
+  const module = await printshop(['build', 'src/core/seed.js', '--module', '--out', path.join(work, 'x')], { cwd: root });
   assert.equal(module.code, 1);
   assert.match(module.stderr, /must export a function as its default/);
 
@@ -191,6 +196,57 @@ test('new-style: a new pack builds its example and passes its own test out of th
   assert.match(failing.stdout, /FAIL png size/);
   assert.match(failing.stderr, /1 check failed/);
   await access(path.join(project, 'out/failing.png'));
+});
+
+test('build: a .js file that no pack names is not imported without --module, and a file of another type is refused', async () => {
+  const project = await mkdtemp(path.join(work, 'module-'));
+  await writeFile(path.join(project, 'script.js'), "import { writeFileSync } from 'node:fs';\nwriteFileSync('side-effect.txt', 'ran');\nexport default () => ({});\n");
+  const script = await printshop(['build', 'script.js'], { cwd: project });
+  assert.equal(script.code, 2);
+  assert.match(script.stderr, /--module/);
+  await assert.rejects(access(path.join(project, 'side-effect.txt')), 'the script did not run');
+  // The example scripts of the README are not build modules either.
+  for (const input of ['examples/ransom-title/build.js', 'examples/zine-page/build.js']) {
+    const r = await printshop(['build', path.join(root, input)], { cwd: project });
+    assert.equal(r.code, 2, input);
+  }
+  await assert.rejects(access(path.join(project, 'build')));
+  await assert.rejects(access(path.join(project, 'out')));
+  await writeFile(path.join(project, 'shot.png'), 'x');
+  const png = await printshop(['build', 'shot.png'], { cwd: project });
+  assert.equal(png.code, 2);
+  assert.match(png.stderr, /not an HTML file/);
+  assert.match((await printshop(['build', '--help'], { cwd: project })).stdout, /data-ready/);
+  assert.equal((await printshop(['build', 'script.js', '--seed='], { cwd: project })).code, 2);
+});
+
+test('the example scripts build only when they are started as the program, not when a module imports them', async () => {
+  const goldens = ['examples/zine-page/page.png', 'examples/ransom-title/title-still.png', 'examples/ransom-title/title.svg'];
+  const before = await Promise.all(goldens.map((g) => readFile(path.join(root, g))));
+  const project = await mkdtemp(path.join(work, 'import-'));
+  for (const script of ['examples/zine-page/build.js', 'examples/ransom-title/build.js', 'examples/collage/build.js']) {
+    const r = await run(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(pathToFileURL(path.join(root, script)).href)})`, 'build'], { cwd: project });
+    assert.equal(r.stderr, '', script);
+  }
+  assert.deepEqual(await Promise.all(goldens.map((g) => readFile(path.join(root, g)))), before);
+  assert.deepEqual(await readdir(project), []);
+});
+
+test('build: no golden image of any pack is replaced, whichever pack is built', async () => {
+  const project = await mkdtemp(path.join(work, 'guard-'));
+  await mkdir(path.join(project, 'node_modules/@tranbao0'), { recursive: true });
+  await symlink(root, path.join(project, 'node_modules/@tranbao0/printshop'), 'junction');
+  assert.equal((await printshop(['new-style', 'riso-test'], { cwd: project })).code, 0);
+  await writeFile(path.join(project, 'mine.html'), '<!doctype html><body data-ready><div id="page" style="height:80px"></div></body>');
+  const golden = path.join(project, 'packs/riso-test/example/page.png');
+  const before = await readFile(golden);
+  await symlink(golden, path.join(project, 'link.png'));
+  for (const [pack, out] of [['collage', 'packs/riso-test/example/page.png'], ['riso-test', path.join(root, 'examples/zine-page/page.png')], ['riso-test', 'link.png'], ['riso-test', 'packs/riso-test/../riso-test/example/page.png'], ['collage', path.join(root, 'examples/collage/collage.png')]]) {
+    const r = await printshop(['build', 'mine.html', '--pack', pack, '-o', out], { cwd: project });
+    assert.equal(r.code, 1, `${pack} -> ${out}: ${r.stderr}`);
+    assert.match(r.stderr, /refusing to write over the golden image/);
+  }
+  assert.deepEqual(await readFile(golden), before);
 });
 
 test('new-style: bad names and the folder option', async () => {
@@ -336,4 +392,21 @@ test('ref register and ref trace: wrong calls and a screenshot that does not sho
   assert.match(badFit.stderr, /has no number "sy"/);
   assert.equal((await printshop(['ref', 'trace', 'shot.png', '--fit', 'bad.json', '--overlay', 'o.png'], { cwd: dir })).code, 2);
   assert.equal((await printshop(['ref', 'paint'], { cwd: dir })).code, 2);
+
+  // A bad value of an option is a mistake in the call: exit code 2, before the core runs.
+  const colour = await printshop(['ref', 'trace', 'shot.png', '--fit', 'bad.json', '--colour', 'purple'], { cwd: dir });
+  assert.equal(colour.code, 2);
+  assert.match(colour.stderr, /--colour must be red, green, blue/);
+  for (const scale of ['2,1', '0,1', '-1,2']) assert.equal((await printshop(['ref', 'register', 'shot.png', 'image.png', '--scale', scale], { cwd: dir })).code, 2, scale);
+  assert.equal((await printshop(['ref', 'frames', 'clip.mp4', '--frames', '1,,3'], { cwd: dir })).code, 2);
+  assert.equal((await printshop(['ref', 'register', 'shot.png', 'image.png', '--mark-pad='], { cwd: dir })).code, 2);
+
+  // A fit file must be the output of ref register: finite scales above 0, finite offsets, and valid JSON.
+  const fits = { 'zero.json': '{"sx":0,"sy":1,"ox":0,"oy":0}', 'negative.json': '{"sx":1,"sy":-2,"ox":0,"oy":0}', 'infinite.json': '{"sx":1,"sy":1,"ox":1e999,"oy":0}', 'broken.json': '{sx:1', 'array.json': '[1]' };
+  for (const [name, text] of Object.entries(fits)) await writeFile(path.join(dir, name), text);
+  for (const name of Object.keys(fits)) {
+    const r = await printshop(['ref', 'trace', 'shot.png', '--fit', name], { cwd: dir });
+    assert.equal(r.code, 1, name);
+    assert.match(r.stderr, new RegExp(`${name.replace('.', '\\.')}.*ref register`), name);
+  }
 });

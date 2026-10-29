@@ -1,5 +1,5 @@
 // `printshop build <input>`: builds an image from a layout.
-import { mkdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, realpath, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { openRenderer } from '../core/render.js';
@@ -12,10 +12,13 @@ export const help = `Usage: printshop build <input> [options]
 
 Builds an image from a layout and runs the checks of the pack.
 <input> is one of:
-  - an HTML file: it is printed through the filters of a pack;
+  - an HTML file (.html or .htm): it is printed through the filters of a pack.
+    The page needs an element with the id "page", and it must set the attribute data-ready on the body when it is ready
+    (for example document.fonts.ready.then(() => document.body.setAttribute('data-ready', ''))). Without it the build waits 30 s and fails;
   - the layout file or the build module of an example of a pack (for example examples/collage/scene.js):
     the build uses the kind, the preset, the seed and the options of that example;
-  - a module whose default export is a build function, (renderer, { seed, filter }) => { image, checks }.
+  - with --module, any .js file whose default export is a build function, (renderer, { seed, filter }) => { image, checks }.
+    The build imports the file, so its top-level code runs. Use --module only for a file that you trust and that has no side effects on import.
 The pack is the one that has the file as an example. Otherwise it is the pack of --pack, or the zine pack.
 A failed check prints as "FAIL" and the command exits with 1.
 
@@ -24,13 +27,14 @@ Options:
       --preset <name>      A preset of the pack. Default: the preset of the example, else "page", else the first preset.
       --seed <number>      The seed of the random streams. Default: the seed of the example or the preset.
       --kind <kind>        What to build from the layout. The zine pack builds "page" (default) and "ransom-title".
+      --module             Accept a .js file that no pack names as an example, and import it as a build module.
       --option <key=value> An option for the kind, for example label="A title". A value is read as JSON if it is JSON. Repeat for more.
   -o, --out <path>         The name of the output, default out/<name>.png. An animated result writes <path without extension>.svg
                            and the still image as <path without extension>-still.png.
   -v, --verbose            Print every check, not only the failed ones.
   -h, --help               Show this help.
 
-The command does not write over the golden image of a pack example.`;
+The command does not write over the golden image of any pack example, whichever pack is built.`;
 
 /**
  * Reads the `--option key=value` list.
@@ -66,6 +70,7 @@ export async function run(args, io) {
     preset: { type: 'string' },
     seed: { type: 'string' },
     kind: { type: 'string' },
+    module: { type: 'boolean' },
     option: { type: 'string', multiple: true },
     out: { type: 'string', short: 'o' },
     verbose: { type: 'boolean', short: 'v' },
@@ -81,18 +86,24 @@ export async function run(args, io) {
   const seed = wholeNumber('--seed', values.seed);
   const options = readOptions(values.option ?? []);
 
-  // The pack and the example.
+  // The packs: every pack that is found protects its golden images; the packs that may own the input are those of --pack, or all of them.
   /** @type {import('../core/pack-runner.js').LoadedPack[]} */
-  let candidates = [];
-  if (values.pack) candidates = [await loadPack(values.pack, io.cwd)];
-  else {
-    for (const { name, file: packFile } of await listPackFiles(io.cwd)) {
-      try {
-        candidates.push(await importPack(packFile));
-      } catch (error) {
-        io.err(`printshop: skipped the pack "${name}": ${error instanceof Error ? error.message : error}`);
-      }
+  const found = [];
+  for (const { name, file: packFile } of await listPackFiles(io.cwd)) {
+    try {
+      found.push(await importPack(packFile));
+    } catch (error) {
+      io.err(`printshop: skipped the pack "${name}": ${error instanceof Error ? error.message : error}`);
     }
+  }
+  /** @type {import('../core/pack-runner.js').LoadedPack[]} */
+  let candidates = found;
+  /** @type {import('../core/pack-runner.js').LoadedPack[]} */
+  let guarded = found;
+  if (values.pack) {
+    const chosenPack = await loadPack(values.pack, io.cwd);
+    candidates = [chosenPack];
+    guarded = [...found, chosenPack];
   }
   /** @type {import('../core/pack-runner.js').LoadedPack | undefined} */
   let loaded;
@@ -105,7 +116,11 @@ export async function run(args, io) {
       break;
     }
   }
-  const isModule = /\.[cm]?js$/.test(file);
+  const isModule = /\.js$/.test(file);
+  if (!example) {
+    if (!isModule && !/\.html?$/.test(file)) throw new UsageError(`${positionals[0]} is not an HTML file (.html or .htm) or a build module (.js)`);
+    if (isModule && !values.module) throw new UsageError(`${positionals[0]} is not the layout or the build module of an example of a pack, so the build would import it and run its top-level code. If it is a build module that you trust, add --module.`);
+  }
   if (!loaded) {
     if (values.pack) loaded = candidates[0];
     else if (!isModule) loaded = await loadPack('zine', io.cwd);
@@ -140,14 +155,20 @@ export async function run(args, io) {
     ? path.resolve(io.cwd, values.out).replace(/\.[^./\\]*$/, '')
     : path.join(io.cwd, 'out', chosen.name);
   // Refuse before the build, if an output would replace a golden image or the animated file that goes with it.
-  const goldens = new Set(candidates.flatMap((c) => c.pack.examples.filter((e) => e.golden).flatMap((e) => [examplePath(c, e.golden), examplePath(c, e.golden).replace(/(-still)?\.png$/, '.svg')])));
+  // Paths are compared by their real paths, so a link to a golden image does not get past the check.
+  const goldens = new Set(await Promise.all(guarded.flatMap((c) => c.pack.examples.filter((e) => e.golden).flatMap((e) => [examplePath(c, e.golden), examplePath(c, e.golden).replace(/(-still)?\.png$/, '.svg')])).map(realPath)));
   for (const target of [`${base}.png`, `${base}.svg`, `${base}-still.png`]) {
-    if (goldens.has(target)) throw new Error(`refusing to write over the golden image ${shown(io.cwd, target)}. To update a golden image, run the test of its pack with UPDATE_GOLDENS=1 and look at the new image.`);
+    if (goldens.has(await realPath(target))) throw new Error(`refusing to write over the golden image ${shown(io.cwd, target)}. To update a golden image, run the test of its pack with UPDATE_GOLDENS=1 and look at the new image.`);
   }
   const renderer = await openRenderer();
   let built;
   try {
     built = await buildPackExample(renderer, loaded, chosen);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError' && /data-ready/.test(error.message)) {
+      throw new Error(`${positionals[0]}: the page did not set the attribute data-ready on the body within 30 s. A layout must set it when the page is ready, for example document.fonts.ready.then(() => document.body.setAttribute('data-ready', '')), and must have an element with the id "page".`);
+    }
+    throw error;
   } finally {
     await renderer.close();
   }
@@ -164,6 +185,20 @@ export async function run(args, io) {
   }
   if (failed.length) io.err(`printshop: ${failed.length} check${failed.length === 1 ? '' : 's'} failed`);
   return failed.length ? 1 : 0;
+}
+
+/**
+ * The real path of a file that may not exist yet: the real path of its nearest existing folder, then the rest of the name.
+ * @param {string} file
+ * @returns {Promise<string>}
+ */
+async function realPath(file) {
+  try {
+    return await realpath(file);
+  } catch {
+    const parent = path.dirname(file);
+    return parent === file ? file : path.join(await realPath(parent), path.basename(file));
+  }
 }
 
 /**

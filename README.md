@@ -73,9 +73,13 @@ printshop ref trace screenshot.png --fit fit.json
 
 `printshop build <input>` builds an image from a layout and runs the checks of the pack.
 The input is an HTML file, or the layout of an example that is made in code (a pack example with a `build` entry).
+An HTML page needs an element with the id `page`, and it sets the attribute `data-ready` on the body when it is ready.
+A `.js` file that no pack names as an example is refused, because the build would run its code.
+Add `--module` to build a module of your own whose default export is a build function.
 It writes `out/<name>.png`, or `out/<name>.svg` and `out/<name>-still.png` for an animated title, and exits with 1 if a check fails.
 Run from the root of this repository, the three examples above build the images of the golden tests.
-The command does not write over a golden image.
+The command does not write over the golden image of any pack.
+A golden image changes only when a pack test runs with `UPDATE_GOLDENS=1` (or `true`).
 
 `printshop new-style <name>` copies `templates/pack` to `packs/<name>`, with an example layout, a preset, a golden test and a README.
 The new pack builds its example and passes its own test as it is:

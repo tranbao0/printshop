@@ -37,6 +37,12 @@ import { grow, loadRgba } from './raster.js';
  */
 
 /**
+ * Tells whether a text names a colour that `trace` knows: red, green, blue or a hex colour like #e61b1b.
+ * @param {string} colour
+ */
+export const isColour = (colour) => ['red', 'green', 'blue'].includes(colour) || /^#[0-9a-f]{6}$/i.test(colour);
+
+/**
  * Tells whether an RGBA pixel has the colour.
  * @param {string} colour
  * @param {number} threshold

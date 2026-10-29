@@ -4,7 +4,7 @@ import path from 'node:path';
 import { findFfmpeg } from '../core/ref/ffmpeg.js';
 import { frameSheet } from '../core/ref/frames.js';
 import { register } from '../core/ref/register.js';
-import { drawTrace, trace } from '../core/ref/trace.js';
+import { drawTrace, isColour, trace } from '../core/ref/trace.js';
 import { UsageError, formatJson, number, parse, shown, wholeNumber } from './io.js';
 
 export const summary = 'Reference tools: a frame sheet from a video, registration of a screenshot, tracing of marks.';
@@ -131,10 +131,9 @@ async function runFrames(args, io) {
     return 0;
   }
   if (positionals.length !== 1) throw new UsageError('ref frames needs one video file');
-  const ffmpeg = await findFfmpeg(io.env);
-  const video = await requireFile(io.cwd, 'video file', positionals[0]);
-  const wanted = values.frames?.split(',').map((/** @type {string} */ t) => wholeNumber('--frames', t.trim()) ?? 0);
-  const { sheet, frames, cols, rows, cell } = await frameSheet(ffmpeg, video, {
+  // Check the options before the search for ffmpeg and the video.
+  const wanted = values.frames?.split(',').map((/** @type {string} */ t) => /** @type {number} */ (wholeNumber('--frames', t.trim())));
+  const options = {
     frames: wanted,
     from: wholeNumber('--from', values.from),
     to: wholeNumber('--to', values.to),
@@ -142,7 +141,10 @@ async function runFrames(args, io) {
     max: wholeNumber('--max', values.max, { min: 1 }),
     cols: wholeNumber('--cols', values.cols, { min: 1 }),
     width: wholeNumber('--width', values.width, { min: 40 }),
-  });
+  };
+  const ffmpeg = await findFfmpeg(io.env);
+  const video = await requireFile(io.cwd, 'video file', positionals[0]);
+  const { sheet, frames, cols, rows, cell } = await frameSheet(ffmpeg, video, options);
   const out = path.resolve(io.cwd, values.out ?? path.join('out', `${path.basename(video).replace(/\.[^.]+$/, '')}-frames.png`));
   await writeOut(out, sheet);
   io.out(`frames: ${frames.map((f) => `#${f.n}`).join(' ')}`);
@@ -177,6 +179,7 @@ async function runRegister(args, io) {
   if (margins && ![1, 4].includes(margins.length)) throw new UsageError('--margin takes one number, or four: top,right,bottom,left');
   const scale = numberList('--scale', values.scale);
   if (scale && scale.length !== 2) throw new UsageError('--scale takes two numbers: min,max');
+  if (scale && !(scale[0] > 0 && scale[1] >= scale[0])) throw new UsageError('--scale takes two numbers, both above 0, the smaller first: min,max');
   const result = await register(screenshot, image, {
     ...(margins && { margin: margins.length === 1 ? [margins[0], margins[0], margins[0], margins[0]] : /** @type {[number, number, number, number]} */ (margins) }),
     markChroma: number('--mark-chroma', values['mark-chroma']),
@@ -194,6 +197,30 @@ async function runRegister(args, io) {
     io.out(`wrote ${shown(io.cwd, out)} (scale ${round(result.sx)}, offset ${round(result.ox)}, ${round(result.oy)}, score ${result.score.toFixed(3)})`);
   } else io.out(json);
   return 0;
+}
+
+/**
+ * Reads the registration that "printshop ref register" makes.
+ * @param {string} name The file, for the messages.
+ * @param {string} text
+ * @returns {{ sx: number, sy: number, ox: number, oy: number }}
+ */
+function readFit(name, text) {
+  const fromRegister = `it must be the JSON that "printshop ref register" makes`;
+  /** @type {Record<string, unknown> | null} */
+  let fit;
+  try {
+    fit = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${name} is not valid JSON (${error instanceof Error ? error.message : error}); ${fromRegister}`);
+  }
+  if (typeof fit !== 'object' || fit === null) throw new Error(`${name} is not a JSON object; ${fromRegister}`);
+  for (const key of ['sx', 'sy', 'ox', 'oy']) {
+    const v = fit[key];
+    if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error(`${name} has no number "${key}"; ${fromRegister}`);
+    if ((key === 'sx' || key === 'sy') && v <= 0) throw new Error(`${name}: "${key}" must be above 0, not ${v}; ${fromRegister}`);
+  }
+  return /** @type {{ sx: number, sy: number, ox: number, oy: number }} */ (fit);
 }
 
 /**
@@ -224,10 +251,11 @@ async function runTrace(args, io) {
   if (!values.fit) throw new UsageError('ref trace needs --fit, the JSON of "printshop ref register"');
   if (Boolean(values.overlay) !== Boolean(values.image)) throw new UsageError('--overlay and --image go together');
   const screenshot = await requireFile(io.cwd, 'screenshot', positionals[0]);
-  const fit = JSON.parse(await readFile(await requireFile(io.cwd, 'fit file', values.fit), 'utf8'));
-  for (const key of ['sx', 'sy', 'ox', 'oy']) if (typeof fit[key] !== 'number') throw new Error(`${values.fit} has no number "${key}"; it must be the JSON of "printshop ref register"`);
+  const colour = values.colour ?? values.color;
+  if (colour !== undefined && !isColour(colour)) throw new UsageError(`--colour must be red, green, blue or a hex colour like #e61b1b, not "${colour}"`);
+  const fit = readFit(values.fit, await readFile(await requireFile(io.cwd, 'fit file', values.fit), 'utf8'));
   const result = await trace(screenshot, fit, {
-    colour: values.colour ?? values.color,
+    colour,
     threshold: number('--threshold', values.threshold),
     minPixels: wholeNumber('--min-pixels', values['min-pixels']),
     reach: wholeNumber('--reach', values.reach, { min: 1 }),

@@ -26,6 +26,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci --ignore-scripts
+      # The package from the signed Ubuntu archive; the frame sheet test needs ffmpeg.
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: npx playwright install --with-deps --only-shell chromium
       - run: npx tsc -p .
       - run: node --test
