@@ -226,7 +226,7 @@ test('the example scripts build only when they are started as the program, not w
   const project = await mkdtemp(path.join(work, 'import-'));
   for (const script of ['examples/zine-page/build.js', 'examples/ransom-title/build.js', 'examples/collage/build.js']) {
     const r = await run(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(pathToFileURL(path.join(root, script)).href)})`, 'build'], { cwd: project });
-    assert.equal(r.stderr, '', script);
+    assert.equal(r.stdout, '', script);
   }
   assert.deepEqual(await Promise.all(goldens.map((g) => readFile(path.join(root, g)))), before);
   assert.deepEqual(await readdir(project), []);
