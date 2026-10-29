@@ -24,16 +24,18 @@ const NETWORK_ERROR = /\b(ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|
 
 /**
  * Runs a program and returns its output. A failure throws an error that has the output in its message.
+ * The program is stopped after `timeout` ms, so a stalled download fails the test quickly instead of holding the CI job.
  * @param {string} file
  * @param {string[]} args
  * @param {string} cwd
+ * @param {number} [timeout]
  */
-async function sh(file, args, cwd) {
+async function sh(file, args, cwd, timeout = 180_000) {
   const env = { ...process.env };
   // A test run inside `node --test` must not make a nested `node --test` report as a child of it.
   delete env.NODE_TEST_CONTEXT;
   try {
-    return await run(file, args, { cwd, env, maxBuffer: 64 * 1024 * 1024 });
+    return await run(file, args, { cwd, env, maxBuffer: 64 * 1024 * 1024, timeout, killSignal: 'SIGKILL' });
   } catch (error) {
     const e = /** @type {{ message: string, stdout?: string, stderr?: string }} */ (error);
     throw new Error(`${file} ${args.join(' ')}\n${e.message}\n${e.stdout ?? ''}\n${e.stderr ?? ''}`);
@@ -68,7 +70,7 @@ test('the tarball installs with --ignore-scripts into an empty project, and the 
   await writeFile(path.join(project, 'package.json'), JSON.stringify({ name: 'consumer', version: '0.0.0', private: true, type: 'module' }, null, 2));
   const dev = ['typescript', '@types/node'].map((name) => `${name}@${pkg.devDependencies[name]}`);
   try {
-    await sh(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--prefer-offline', tarball, ...dev], project);
+    await sh(npm, ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--prefer-offline', '--fetch-timeout=30000', '--fetch-retries=4', tarball, ...dev], project);
   } catch (error) {
     if (!process.env.CI && NETWORK_ERROR.test(String(error))) return t.skip('the npm registry is out of reach and the npm cache does not have the packages: run this test with a network');
     throw error;
