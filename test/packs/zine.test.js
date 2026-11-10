@@ -204,7 +204,7 @@ function assertSameWithinPx(a, b, tolerance) {
 test('the example ransom title renders and equals its golden', async () => {
   const { svg, png: still, letters, checks } = await exampleTitleBuild();
   assert.ok(checks.every((c) => c.ok));
-  assert.equal(letters.length, 7, 'the title has seven letters, not the six of the profile title');
+  assert.equal(letters.length, 7, 'the title has seven letters');
   const direct = await buildRansomTitle(renderer, exampleTitle, titleOptions);
   assert.ok(direct.still.equals(still), 'the entry in zine.examples builds the same title as the call with the same options');
 

@@ -24,7 +24,7 @@ const NETWORK_ERROR = /\b(ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|
 
 /**
  * Runs a program and returns its output. A failure throws an error that has the output in its message.
- * The program is stopped after `timeout` ms, so a stalled download fails the test quickly instead of holding the CI job.
+ * The program is stopped after `timeout` ms, so a stalled download fails the test quickly and does not hold up the CI job.
  * @param {string} file
  * @param {string[]} args
  * @param {string} cwd
