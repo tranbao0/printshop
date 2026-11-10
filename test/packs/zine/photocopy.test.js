@@ -147,8 +147,8 @@ test('the hairs of a tile draw from the stream of the tile, so more hairs leave 
 });
 
 // The stored photocopies were made by this module, to catch changes and platform differences.
-// The filter draws every random feature from its own named stream (the seeded randomness rule: one stream per purpose).
-// The render and encode references are the profile ones.
+// They are not a comparison with the profile generator: its filter draws every random feature from one shared sequence,
+// and the seeded randomness rule (one named stream per purpose) gives other numbers. The render and encode references are the profile ones.
 test('the photocopy of the test page equals the stored result', async () => {
   const page = await decodeRgba(await readFile(coreFixture('render-all.png')));
   const { zones } = JSON.parse(await readFile(coreFixture('render-meta.json'), 'utf8')).all;
